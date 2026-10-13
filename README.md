@@ -1,36 +1,149 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TaskFlow
 
-## Getting Started
+Aplicación full-stack de gestión de tareas y usuarios. Incluye autenticación JWT, un dashboard con métricas, un módulo de tareas con control de estados y un módulo de administración de usuarios con búsqueda y paginación.
 
-First, run the development server:
+## Características
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Autenticación con JWT (login/logout y protección de rutas).
+- Dashboard con KPIs (total, pendientes, en progreso, completadas) y las 5 tareas más recientes.
+- Gestión de tareas: listado, filtro por estado, creación y cambio de estado con transiciones válidas.
+- Gestión de usuarios (solo `ADMIN`): listado paginado, búsqueda por nombre/email y edición de nombre/email.
+- Roles: `USER`, `MODERATOR`, `ADMIN`.
+- Manejo de errores con mensajes amigables (400/401/403/404/409/500/network).
+- Estados de UI: loading (skeletons), error (con reintento) y empty state.
+- UI responsive, accesible y con tema Dark Slate.
+
+## Stack
+
+### Frontend
+
+- Next.js 16 (App Router)
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Axios
+- TanStack React Query v5
+- Sonner (toasts)
+- lucide-react (iconos)
+
+### Backend
+
+- Kotlin
+- Spring Boot 3.5
+- Spring Security
+- JWT (jjwt)
+- JPA / Hibernate
+- PostgreSQL
+
+## Arquitectura
+
+```text
+Frontend (Next.js)
+    │  Components → Hooks → Services → Axios
+    ▼
+REST API (Spring Boot)
+    │  Controller → Service → Repository
+    ▼
+PostgreSQL
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+En el frontend la comunicación HTTP está centralizada en una única instancia de Axios (`src/lib/api.ts`), con servicios por dominio (`task-service`, `user-service`) y hooks de React Query (`queries` / `mutations`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Seguridad
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Login contra `POST /auth/login`, que devuelve un JWT (`sub` = email, claim `role`, expiración de 1 hora).
+- El token se guarda en `localStorage` de forma encapsulada (`src/lib/auth/token.ts`).
+- Axios añade `Authorization: Bearer <token>` mediante un interceptor.
+- `401` → se limpia la sesión y se redirige a `/login`.
+- `403` → no se cierra la sesión; se muestra el error de autorización.
+- Autorización por rol en backend: `/users/**` requiere `ROLE_ADMIN`. `POST /users` y `POST /auth/login` son públicos.
 
-## Learn More
+## Instalación
 
-To learn more about Next.js, take a look at the following resources:
+### Requisitos
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Node.js 20+ y npm.
+- JDK 21.
+- PostgreSQL corriendo (por defecto el backend usa `localhost:5434`).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Backend
 
-## Deploy on Vercel
+```bash
+cd taskflow-api/taskflow-api
+# Windows: gradlew.bat bootRun
+./gradlew bootRun
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Frontend
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+cd taskflow-frontend
+npm install
+npm run dev
+```
+
+Abre `http://localhost:3000`.
+
+## Variables de entorno
+
+No incluyas valores reales (especialmente secretos) en el repositorio.
+
+Backend (`application.yaml`):
+
+- `DB_USERNAME`
+- `DB_PASSWORD`
+- `JWT_SECRET`
+
+Frontend (`.env.local`, ignorado por git):
+
+- `NEXT_PUBLIC_API_URL` (por ejemplo, `http://localhost:8080`)
+
+## Uso
+
+1. Inicia sesión en `/login` con un usuario válido.
+2. El Dashboard muestra las métricas y las 5 tareas recientes.
+3. En `/tasks` lista, filtra, crea y cambia el estado de las tareas.
+4. En `/users` (solo `ADMIN`) busca, pagina y edita usuarios.
+
+## Estructura del proyecto
+
+```text
+taskflow-frontend/
+  src/
+    app/          # rutas (login, (dashboard), tasks, users)
+    components/   # layout, auth, dashboard, tasks, users, providers
+    context/      # AuthContext
+    hooks/        # queries y mutations
+    lib/          # api.ts, services, errors, types, query-keys, ...
+```
+
+```text
+taskflow-api/taskflow-api/
+  src/main/kotlin/com/taskflow/api/
+    controller/   # endpoints REST
+    service/      # lógica de negocio
+    repository/   # acceso a datos (Spring Data)
+    entity/       # entidades JPA
+    dto/          # request/response
+    security/     # JWT y Spring Security
+    exception/    # manejo global de errores
+```
+
+## Testing
+
+- Backend: `TaskflowApiApplicationTests.contextLoads()` (`@SpringBootTest`). Requiere PostgreSQL y las variables de entorno del backend. Ejecutar con `./gradlew test`.
+- Frontend: no existe framework de tests automatizado. La validación se realiza con `npm run lint` y `npm run build` (type checking incluido).
+
+## Estado del proyecto
+
+MVP funcional: autenticación, dashboard, tareas y usuarios conectados al backend real.
+
+## Limitaciones conocidas / Mejoras futuras
+
+- El JWT se almacena en `localStorage`; una mejora futura es migrar a cookie `httpOnly` + protección server-side (proxy/DAL).
+- No hay refresh token (el backend no lo soporta).
+- El modal no implementa "focus trap" avanzado (solo cierre con Escape/overlay).
+- `POST /tasks` no está restringido por rol en el backend (la UI limita la creación a `ADMIN`); la política de creación de tareas queda pendiente de definir a nivel backend.
+- `GET /users` no devuelve `role` (`UserResponse` = id, name, email), por lo que la tabla de usuarios no muestra una columna de rol.
+- Sin infraestructura de tests automatizados en el frontend.
+
