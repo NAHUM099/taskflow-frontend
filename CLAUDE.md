@@ -22,6 +22,7 @@
 | [`docs/design-system.md`](docs/design-system.md) | Tokens, paleta, tipografía, espaciados, radios, sombras, inventario de componentes con sus clases, shell, breakpoints, estados, animaciones, z-index | Se modifica cualquier estilo, layout o componente visual, o se crea uno nuevo |
 | [`docs/api-contracts.md`](docs/api-contracts.md) | Endpoints usados y no usados, roles del backend, formas de datos, reglas al tocar datos | Se consume un dato nuevo, cambia un payload o aparece un `401`/`403` inesperado |
 | [`docs/technical-debt.md`](docs/technical-debt.md) | Deuda técnica, limitaciones, carencias de accesibilidad, riesgos y pendientes de confirmar | Se planifica una mejora o se toca un área con deuda (para no empeorarla) |
+| [`docs/testing.md`](docs/testing.md) | Stack de pruebas, comandos, convención de archivos, mocking, umbrales y trampas | Se escribe/ajusta un test o se toca la configuración de Vitest |
 | `README.md` | Puesta en marcha, variables de entorno, descripción funcional | Se prepara el entorno local o se actualiza la documentación funcional |
 | `AGENTS.md` | Reglas de Next.js **administradas por `next dev`** (bloque `BEGIN/END:nextjs-agent-rules`) | Nunca editar a mano; se regenera solo |
 
@@ -45,8 +46,9 @@ que vive en otro repositorio.
 | Frontend | `C:\SPRING-KOTLIN\taskflow-frontend` | `github.com/NAHUM099/taskflow-frontend` | **Aquí sí se trabaja** |
 | Backend | `C:\SPRING-KOTLIN\taskflow-api\taskflow-api` | `github.com/NAHUM099/taskflow-api` | **Solo lectura**: se puede leer para respetar contratos, **nunca** modificar |
 
-Estado actual: MVP funcional conectado al backend real, tema oscuro único (sin toggle claro/oscuro) y sin
-tests automatizados.
+Estado actual: MVP funcional conectado al backend real, tema oscuro único (sin toggle claro/oscuro) y
+**suite de pruebas automatizadas** con Vitest + Testing Library (189 tests, 34 archivos; detalle en
+[`docs/testing.md`](docs/testing.md)).
 
 ---
 
@@ -63,12 +65,13 @@ tests automatizados.
 | Toasts | Sonner | 2.0.8 |
 | Iconos | lucide-react | 1.37.0 |
 | Lint | ESLint (flat config) + `eslint-config-next` | 9.39.5 / 16.4.2 |
+| Tests | Vitest + Testing Library (jsdom) | 5.1.0 / 16.3.3 |
 | Compilador | React Compiler (`reactCompiler: true`) | `babel-plugin-react-compiler` 1.0.0 |
-| CI | Jenkins (`NodeJS22`) | — |
+| CI | Jenkins (`NodeJS22`): `npm ci` → `lint` → `test:ci` → `build` | — |
 
 **No hay** librería de UI (shadcn/MUI/Radix), ni gestor de estado global (Redux/Zustand), ni librería de
-formularios (React Hook Form/Zod), ni framework de tests, ni Prettier, ni Husky, ni `components/ui/`.
-Introducir cualquiera de ellas requiere justificación y aprobación explícita.
+formularios (React Hook Form/Zod), ni Prettier, ni Husky, ni `components/ui/`. Introducir cualquiera de
+ellas requiere justificación y aprobación explícita.
 
 ---
 
@@ -236,14 +239,17 @@ Reglas específicas del repositorio:
 
 | Acción | Comando | Notas |
 | --- | --- | --- |
-| Requisito | Node.js **20+** y npm | El CI usa Node 22 (`NodeJS22` en `Jenkinsfile`) |
+| Requisito | Node.js **22.12+** y npm | Vitest 5 lo exige; el CI usa Node 22 (`NodeJS22` en `Jenkinsfile`) |
 | Instalar dependencias | `npm install` | `npm ci` en CI (requiere `package-lock.json` versionado) |
 | Entorno de desarrollo | `npm run dev` | Next en `http://localhost:3000` |
 | Build de producción | `npm run build` | Incluye **type checking**, pero en Next 16 ya **no** ejecuta ESLint: el lint es un paso aparte |
 | Servir el build | `npm run start` | Requiere haber ejecutado `build` |
 | Linter | `npm run lint` | Equivale a `eslint` con `eslint.config.mjs` |
 | Type checking aislado | `npx tsc --noEmit` | Atajo útil; `build` ya lo hace |
-| Tests | **No existen** | No hay script `test` ni runner instalado |
+| Tests | `npm run test` | Una pasada; `npm run test:watch` para desarrollo |
+| Cobertura | `npm run test:coverage` | Aplica umbrales (global 95 %, `src/lib/**` 95 %, `src/hooks/**` 100 %) |
+| Tests + JUnit (CI) | `npm run test:ci` | Escribe `coverage/junit.xml`; es el que usa Jenkins |
+| Un archivo / un test | `npx vitest run <ruta>` / `npx vitest run -t "<nombre>"` | Filtros de Vitest |
 | Backend (referencia) | `.\gradlew.bat bootRun` en `C:\SPRING-KOTLIN\taskflow-api\taskflow-api` | Requiere PostgreSQL (por defecto `localhost:5434`) y `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET` |
 | Tests del backend (referencia) | `.\gradlew.bat test` | `@SpringBootTest`: necesita PostgreSQL y las variables de entorno del backend |
 
@@ -253,8 +259,9 @@ Ese archivo está ignorado por git y **no debe crearse ni modificarse** sin auto
 **Comprobaciones mínimas antes de dar una tarea por terminada:**
 
 1. `npm run lint` sin errores nuevos.
-2. `npm run build` correcto (falla si hay errores de tipos).
-3. Prueba manual del flujo afectado con el backend levantado (login → dashboard → tareas → usuarios).
+2. `npm run test` en verde (si se tocó lógica, hooks o componentes, añadir/ajustar el `.test` colocado).
+3. `npm run build` correcto (falla si hay errores de tipos).
+4. Prueba manual del flujo afectado con el backend levantado (login → dashboard → tareas → usuarios).
 
 ---
 
@@ -276,9 +283,9 @@ Ese archivo está ignorado por git y **no debe crearse ni modificarse** sin auto
 8. **Informar:** archivos modificados y qué cambió en cada uno; decisiones y su justificación; validaciones
    ejecutadas y su resultado; riesgos, pendientes o cosas fuera de alcance.
 
-**Definición de terminado:** compila sin errores, pasa el lint, el comportamiento previo sigue intacto, es
-coherente visualmente, es responsive y el informe está entregado. Sin commits ni PRs salvo petición
-explícita.
+**Definición de terminado:** compila sin errores, pasa el lint, pasa la suite de tests, el comportamiento
+previo sigue intacto, es coherente visualmente, es responsive y el informe está entregado. Sin commits ni
+PRs salvo petición explícita.
 
 ---
 
@@ -289,7 +296,9 @@ priorizable en [`docs/technical-debt.md`](docs/technical-debt.md).
 
 - **No existe `components/ui/`**: primitivos repetidos en `Dashboard*`, `Tasks*` y `Users*` (riesgo de
   divergencia visual). Cualquier primitivo nuevo debe justificarse y, si es posible, reutilizarse.
-- **Sin tests** y el CI solo hace `npm ci` + `npm run build` (**no** lint).
+- **Tests sin E2E ni a11y automatizada**: 189 tests / 34 archivos y 98 % de líneas (incluye `components/layout`,
+  `components/dashboard` y el flujo `401`/logout); faltan Playwright y `vitest-axe`. El CI ya ejecuta `lint` y
+  `test:ci` además del build.
 - **Sin `error.tsx`, `not-found.tsx` ni `loading.tsx`**.
 - **Validación de formularios triplicada** y sin esquema compartido.
 - **Sin guard de entorno** para `NEXT_PUBLIC_API_URL`.

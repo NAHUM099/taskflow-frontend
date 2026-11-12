@@ -12,8 +12,11 @@
 1. **No existe `components/ui/`.** Botones, inputs, labels, badges, skeletons, bloques de error/vacío y
    cabeceras de "tabla" están repetidos en `Dashboard*`, `Tasks*` y `Users*`. Riesgo real: divergencia
    visual al tocar un solo sitio.
-2. **Sin tests automatizados** (ni runner ni script). El CI (`Jenkinsfile`) solo hace `npm ci` +
-   `npm run build`; **no** ejecuta `npm run lint`.
+2. **Sin pruebas E2E ni a11y automatizada**: la suite unitaria/integración (189 tests, 34 archivos) cubre
+   `lib` (100 %), hooks (100 %), `AuthContext`, `components/*` y el flujo `401`/logout de punta a punta con
+   jsdom, con 98 % de líneas globales (ver [testing.md](./testing.md)). Falta Playwright, `vitest-axe` y
+   cualquier verificación contra el backend real. El CI ya ejecuta `npm run lint` y `npm run test:ci` antes
+   del build.
 3. **Sin `error.tsx`, `not-found.tsx` ni `loading.tsx`**: un error de render cae en la pantalla por
    defecto de Next y un 404 no tiene diseño propio.
 4. **Validación de formularios triplicada** (`LoginForm`, `CreateTaskModal`, `EditUserModal`) sin esquema
@@ -49,6 +52,8 @@
     etiqueta flotante del sidebar colapsado usa `rounded-md` (el resto de elementos pequeños usan
     `rounded-lg`).
 15. **Botón "Mi perfil" en el `Sidebar` sin destino** (no existe página de perfil ni endpoint accesible).
+    Es la única línea sin cubrir de `Sidebar.tsx` (L300): decidir si se elimina o se deshabilita **antes** de
+    escribirle un test, para no congelar un no-op.
 16. **`DashboardStats` define sus etiquetas de estado a mano** en vez de derivarlas de `TASK_STATUS_META`.
 
 ---
@@ -65,6 +70,10 @@
 21. **Inconsistencias de permisos backend/frontend**: `MODERATOR` puede crear tareas por API pero la UI
     restringe el alta a `ADMIN`, y ese rol recibiría `403` al cargar usuarios dentro del modal;
     `PATCH /users/me/password` es ADMIN-only. Detalle en [api-contracts.md](./api-contracts.md).
+22. **Paginación de usuarios con doble fuente de verdad**: `UsersContent` guarda `page` en estado local pero
+    `UserPagination` recibe `pageData.number` del servidor. Hoy coinciden; si el backend recortara la página
+    pedida (p. ej. al borrar el último usuario de la última página) la UI quedaría desincronizada. Los tests
+    documentan el comportamiento actual (`UsersContent.test.tsx`).
 
 ---
 
