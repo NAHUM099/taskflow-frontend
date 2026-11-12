@@ -16,6 +16,8 @@
 | `PATCH` | `/tasks/{id}/status` | `updateTaskStatus()` | `useUpdateTaskStatus` → `TaskStatusMenu` | Body `{ status }` |
 | `GET` | `/users?page&size&search` | `getUsers()` (`src/lib/services/user-service.ts`) | `useUsers` → `UsersContent`, `CreateTaskModal` | Solo `ROLE_ADMIN` |
 | `PATCH` | `/users/{id}` | `updateUser()` | `useUpdateUser` → `EditUserModal` | Body `{ name, email }`; solo `ROLE_ADMIN` |
+| `PATCH` | `/users/{id}/status` | `updateUserStatus()` | `useUpdateUserStatus` → `UpdateUserStatusModal` | Body `{ active: boolean }`; responde el `UserResponse` actualizado; solo `ROLE_ADMIN` |
+| `PATCH` | `/users/{id}/password` | `updateUserPassword()` | `useUpdateUserPassword` → `UpdateUserPasswordModal` | Body `{ newPassword }` (mín. 6), responde `204 No Content`; solo `ROLE_ADMIN`. **Requiere el backend del PR #1 (`feature/admin-update-user-password`), pendiente de fusión en `main`** |
 | `POST` | `/users` | `createUser()` | `useCreateUser` → `CreateUserModal` | Público en el backend; la UI lo muestra solo a `ROLE_ADMIN`. Body `{ name, email, password }` (mín. 6); rol forzado a `USER` |
 
 ---
@@ -23,7 +25,6 @@
 ## 2. Endpoints existentes en el backend **no** utilizados todavía
 
 - `GET /users/{id}` — detalle de usuario.
-- `PATCH /users/{id}/status` — activar/desactivar usuario.
 - `PATCH /users/me/password` — cambio de contraseña (queda bajo `/users/**`, es decir, **solo ADMIN**).
 - `DELETE /users/{id}` — eliminación.
 - `GET /users/{id}/tasks` — tareas de un usuario.
@@ -56,13 +57,16 @@ StatusRequest       { status }
 UserResponse        { id: number|null, name, email, active }     # el backend SÍ envía "active"
 CreateUserRequest   { name, email, password }                   # password: @Size(min = 6); rol forzado USER
 UpdateUserRequest   { name, email }
+UpdateUserStatusRequest { active }                              # solo ADMIN; responde el usuario actualizado
+UpdateUserPasswordRequest { newPassword }                        # @Size(min = 6); solo ADMIN, sin contraseña previa
 Page<UserResponse>  { content, totalElements, totalPages, number, size, first, last,
                       numberOfElements, empty, … }
 ErrorResponse       { timestamp, status, message, path, details } # el frontend solo lee "message"
 ```
 
-`src/lib/types.ts` declara hoy `UserResponse` **sin** `active`: es una divergencia conocida entre el
-contrato y el modelo del frontend (ver [technical-debt.md](./technical-debt.md)).
+`src/lib/types.ts` declara `UserResponse.active` como **opcional** (`active?: boolean`): el backend
+siempre lo envía y la UI lo trata como `true` cuando falta. `role` sigue sin declararse porque el
+listado no lo devuelve (ver [technical-debt.md](./technical-debt.md)).
 
 Estados de tarea: `PENDING`, `IN_PROGRESS`, `DONE`, `CANCELLED`. Las transiciones válidas están
 espejadas en `src/lib/task-status.ts` (`ALLOWED_TRANSITIONS`) y las impone el backend; si divergen,
@@ -72,7 +76,7 @@ manda el backend.
 
 ## 5. Reglas al tocar datos
 
-- No inventar campos ni endpoints. Si se necesita un dato nuevo (p. ej. `active` o `role`),
+- No inventar campos ni endpoints. Si se necesita un dato nuevo (p. ej. `role`),
   **verificarlo primero en el backend** y luego extender `src/lib/types.ts` + el servicio correspondiente.
 - `createdAt` llega como string ISO y **hoy no se muestra en la UI**; no formatear fechas a mano dentro de
   un componente sin un helper compartido.

@@ -12,6 +12,7 @@ describe("UserList", () => {
         searching={false}
         onEdit={() => {}}
         onChangePassword={() => {}}
+        onChangeStatus={() => {}}
       />,
     );
 
@@ -25,6 +26,7 @@ describe("UserList", () => {
         searching
         onEdit={() => {}}
         onChangePassword={() => {}}
+        onChangeStatus={() => {}}
       />,
     );
 
@@ -45,6 +47,7 @@ describe("UserList", () => {
         searching={false}
         onEdit={() => {}}
         onChangePassword={() => {}}
+        onChangeStatus={() => {}}
       />,
     );
 
@@ -63,6 +66,7 @@ describe("UserList", () => {
         searching={false}
         onEdit={onEdit}
         onChangePassword={() => {}}
+        onChangeStatus={() => {}}
       />,
     );
     await user.click(
@@ -83,6 +87,7 @@ describe("UserList", () => {
         searching={false}
         onEdit={() => {}}
         onChangePassword={onChangePassword}
+        onChangeStatus={() => {}}
       />,
     );
     await user.click(
@@ -92,5 +97,54 @@ describe("UserList", () => {
     );
 
     expect(onChangePassword).toHaveBeenCalledWith(target);
+  });
+
+  it("entrega el usuario seleccionado al inactivar", async () => {
+    const onChangeStatus = vi.fn();
+    const user = userEvent.setup();
+    const target = makeUser({ id: 8, name: "Luis Pérez", active: true });
+
+    render(
+      <UserList
+        users={[target]}
+        searching={false}
+        onEdit={() => {}}
+        onChangePassword={() => {}}
+        onChangeStatus={onChangeStatus}
+      />,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Inactivar usuario Luis Pérez" }),
+    );
+
+    expect(onChangeStatus).toHaveBeenCalledWith(target);
+    expect(screen.queryByText("Inactivo")).not.toBeInTheDocument();
+  });
+
+  it("marca como inactivo y ofrece activar a un usuario desactivado", async () => {
+    const onChangeStatus = vi.fn();
+    const user = userEvent.setup();
+    const target = makeUser({ id: 9, name: "Ana Torres", active: false });
+
+    render(
+      <UserList
+        users={[target]}
+        searching={false}
+        onEdit={() => {}}
+        onChangePassword={() => {}}
+        onChangeStatus={onChangeStatus}
+      />,
+    );
+
+    expect(screen.getByText("Inactivo")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Inactivar usuario Ana Torres" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Activar usuario Ana Torres" }),
+    );
+
+    expect(onChangeStatus).toHaveBeenCalledWith(target);
   });
 });

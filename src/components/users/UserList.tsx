@@ -7,6 +7,7 @@ interface UserListProps {
   searching: boolean;
   onEdit: (user: UserResponse) => void;
   onChangePassword: (user: UserResponse) => void;
+  onChangeStatus: (user: UserResponse) => void;
 }
 
 export function UserList({
@@ -14,6 +15,7 @@ export function UserList({
   searching,
   onEdit,
   onChangePassword,
+  onChangeStatus,
 }: UserListProps) {
   if (users.length === 0) {
     return (
@@ -43,6 +45,7 @@ export function UserList({
             user={user}
             onEdit={onEdit}
             onChangePassword={onChangePassword}
+            onChangeStatus={onChangeStatus}
           />
         ))}
       </ul>

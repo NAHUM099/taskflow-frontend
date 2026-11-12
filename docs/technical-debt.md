@@ -12,15 +12,15 @@
 1. **No existe `components/ui/`.** Botones, inputs, labels, badges, skeletons, bloques de error/vacío y
    cabeceras de "tabla" están repetidos en `Dashboard*`, `Tasks*` y `Users*`. Riesgo real: divergencia
    visual al tocar un solo sitio.
-2. **Sin pruebas E2E ni a11y automatizada**: la suite unitaria/integración (205 tests, 36 archivos) cubre
+2. **Sin pruebas E2E ni a11y automatizada**: la suite unitaria/integración (239 tests, 40 archivos) cubre
    `lib` (100 %), hooks (100 %), `AuthContext`, `components/*` y el flujo `401`/logout de punta a punta con
    jsdom, con 98 % de líneas globales (ver [testing.md](./testing.md)). Falta Playwright, `vitest-axe` y
    cualquier verificación contra el backend real. El CI ya ejecuta `npm run lint` y `npm run test:ci` antes
    del build.
 3. **Sin `error.tsx`, `not-found.tsx` ni `loading.tsx`**: un error de render cae en la pantalla por
    defecto de Next y un 404 no tiene diseño propio.
-4. **Validación de formularios cuadruplicada** (`LoginForm`, `CreateTaskModal`, `EditUserModal`,
-   `CreateUserModal`) sin esquema compartido; los mensajes se repiten.
+4. **Validación de formularios quintuplicada** (`LoginForm`, `CreateTaskModal`, `EditUserModal`,
+   `CreateUserModal`, `UpdateUserPasswordModal`) sin esquema compartido; los mensajes se repiten.
 5. **Sin guard de entorno**: si `NEXT_PUBLIC_API_URL` no está definida, Axios usa rutas relativas y los
    fallos se vuelven confusos.
 6. **Hooks de datos fuera del `*Content`**: `RecentTasks` y `TaskStatusMenu` consultan/mutan por su
@@ -60,10 +60,11 @@
 
 ## Datos y contratos
 
-17. **`UserResponse` del frontend no declara `active`** (el backend sí lo envía) ni `role` (el backend no
-    lo devuelve en el listado); por eso la tabla de usuarios no muestra estado ni rol.
-18. **Endpoints sin usar**: `GET /users/{id}`, `PATCH /users/{id}/status`, `DELETE /users/{id}`,
-    `GET /users/{id}/tasks`, `PATCH /users/me/password`.
+17. **`UserResponse` del frontend no declara `role`** (el backend no lo devuelve en el listado), así que la
+    tabla de usuarios no muestra una columna de rol. `active` sí está declarado (opcional) y alimenta el
+    badge "Inactivo" y el botón de activar/inactivar.
+18. **Endpoints sin usar**: `GET /users/{id}`, `DELETE /users/{id}`, `GET /users/{id}/tasks`,
+    `PATCH /users/me/password`.
 19. **`createdAt` nunca se muestra** y no existe helper de formato de fechas.
 20. **`id: number | null`** en `TaskResponse`/`UserResponse` obliga a comprobaciones de nulidad en cada
     uso.
@@ -76,11 +77,18 @@
     `UserPagination` recibe `pageData.number` del servidor. Hoy coinciden; si el backend recortara la página
     pedida (p. ej. al borrar el último usuario de la última página) la UI quedaría desincronizada. Los tests
     documentan el comportamiento actual (`UsersContent.test.tsx`).
+23. **Inactivar la propia cuenta**: `PATCH /users/{id}/status` solo cambia el flag y no impide que un ADMIN
+    se desactive a sí mismo; perdería el acceso al instante, porque `TaskFlowUserDetails.isEnabled()`
+    devuelve `active` en cada petición autenticada. La UI lo advierte en `UpdateUserStatusModal` pero no
+    bloquea la fila: si se quiere impedir, debe aplicarse en el backend.
 
 ---
 
 ## Pendiente de confirmar
 
+- **`PATCH /users/{id}/password` (cambio de contraseña por ADMIN) llega en el PR #1 del backend
+  (`feature/admin-update-user-password`) y todavía no está en `main`**. La UI ya lo consume desde
+  `UpdateUserPasswordModal`; hasta que se fusione, la acción responderá `404`/`405` contra `main`.
 - Cobertura real de los tests del backend y política definitiva de creación de tareas (el `README` indica
   que `POST /tasks` limita por rol admin/mod en backend, mientras la UI restringe a ADMIN).
 - Estrategia de despliegue del frontend más allá del CI de Jenkins (`vercel.app` aparece en CORS, pero no

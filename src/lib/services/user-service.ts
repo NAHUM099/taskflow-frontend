@@ -3,6 +3,7 @@ import type {
   CreateUserRequest,
   UpdateUserPasswordRequest,
   UpdateUserRequest,
+  UpdateUserStatusRequest,
   UserListParams,
   UserPageResponse,
   UserResponse,
@@ -46,3 +47,14 @@ export async function updateUserPassword(
   await api.patch<void>(`/users/${id}/password`, request);
 }
 
+// El backend devuelve el usuario ya actualizado (con su nuevo `active`).
+export async function updateUserStatus(
+  id: number,
+  request: UpdateUserStatusRequest,
+): Promise<UserResponse> {
+  const { data } = await api.patch<UserResponse>(
+    `/users/${id}/status`,
+    request,
+  );
+  return data;
+}

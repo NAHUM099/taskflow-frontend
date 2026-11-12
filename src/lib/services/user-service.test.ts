@@ -4,6 +4,7 @@ import {
   getUsers,
   updateUser,
   updateUserPassword,
+  updateUserStatus,
 } from "@/lib/services/user-service";
 import { makeUser, makeUserPage } from "@/test/factories";
 
@@ -146,5 +147,27 @@ describe("updateUserPassword", () => {
     await expect(
       updateUserPassword(4, { newPassword: "nueva123" }),
     ).rejects.toThrow("404");
+  });
+});
+
+describe("updateUserStatus", () => {
+  beforeEach(() => {
+    patch.mockReset();
+  });
+
+  it("hace PATCH /users/:id/status y devuelve el usuario actualizado", async () => {
+    const inactiveUser = makeUser({ id: 4, active: false });
+    patch.mockResolvedValue({ data: inactiveUser });
+
+    await expect(updateUserStatus(4, { active: false })).resolves.toEqual(
+      inactiveUser,
+    );
+    expect(patch).toHaveBeenCalledWith("/users/4/status", { active: false });
+  });
+
+  it("propaga los errores de la API", async () => {
+    patch.mockRejectedValue(new Error("404"));
+
+    await expect(updateUserStatus(4, { active: true })).rejects.toThrow("404");
   });
 });

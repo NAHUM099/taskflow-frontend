@@ -7,8 +7,8 @@ Aplicación full-stack de gestión de tareas y usuarios. Incluye autenticación 
 - Autenticación con JWT (login/logout y protección de rutas).
 - Dashboard con KPIs (total, pendientes, en progreso, completadas) y las 5 tareas más recientes.
 - Gestión de tareas: listado, filtro por estado, creación y cambio de estado con transiciones válidas.
-- Gestión de usuarios (solo `ADMIN`): listado paginado, búsqueda por nombre/email, alta y edición de
-  nombre/email.
+- Gestión de usuarios (solo `ADMIN`): listado paginado, búsqueda por nombre/email, alta, edición de
+  nombre/email, restablecimiento de contraseña y activación/inactivación de cuentas.
 - Roles: `USER`, `MODERATOR`, `ADMIN`.
 - Manejo de errores con mensajes amigables (400/401/403/404/409/500/network).
 - Estados de UI: loading (skeletons), error (con reintento) y empty state.
@@ -104,7 +104,8 @@ Frontend (`.env.local`, ignorado por git):
 1. Inicia sesión en `/login` con un usuario válido.
 2. El Dashboard muestra las métricas y las 5 tareas recientes.
 3. En `/tasks` lista, filtra, crea y cambia el estado de las tareas.
-4. En `/users` (solo `ADMIN`) busca, pagina y edita usuarios.
+4. En `/users` (solo `ADMIN`) busca, pagina, edita usuarios, restablece su contraseña e inactiva o
+   reactiva cuentas.
 
 ## Estructura del proyecto
 
@@ -145,6 +146,6 @@ MVP funcional: autenticación, dashboard, tareas y usuarios conectados al backen
 - No hay refresh token (el backend no lo soporta).
 - El modal no implementa "focus trap" avanzado (solo cierre con Escape/overlay).
 - `POST /tasks` no está restringido por rol en el backend (la UI limita la creación a `ADMIN`); la política de creación de tareas queda pendiente de definir a nivel backend.
-- `GET /users` no devuelve `role` (`UserResponse` = id, name, email), por lo que la tabla de usuarios no muestra una columna de rol.
+- `GET /users` no devuelve `role` (`UserResponse` = id, name, email, active), por lo que la tabla de usuarios no muestra una columna de rol.
 - Sin infraestructura de tests automatizados en el frontend.
 

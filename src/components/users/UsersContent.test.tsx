@@ -192,6 +192,28 @@ describe("UsersContent", () => {
     ).toBeInTheDocument();
   });
 
+  it("abre el modal de estado al pulsar el botón de la fila", async () => {
+    stubQuery({
+      data: makeUserPage({
+        content: [makeUser({ id: 4, name: "Ana Torres", active: true })],
+      }),
+    });
+    const user = userEvent.setup();
+
+    renderWithProviders(<UsersContent />);
+    await user.click(
+      screen.getByRole("button", { name: "Inactivar usuario Ana Torres" }),
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: "Inactivar usuario" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("abre el modal de creación al pulsar Nuevo usuario", async () => {
     stubQuery({ data: makeUserPage() });
     const user = userEvent.setup();
