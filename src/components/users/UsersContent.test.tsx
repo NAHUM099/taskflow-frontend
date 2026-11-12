@@ -172,6 +172,18 @@ describe("UsersContent", () => {
     ).toBeInTheDocument();
   });
 
+  it("abre el modal de creación al pulsar Nuevo usuario", async () => {
+    stubQuery({ data: makeUserPage() });
+    const user = userEvent.setup();
+
+    renderWithProviders(<UsersContent />);
+    await user.click(screen.getByRole("button", { name: "Nuevo usuario" }));
+
+    expect(
+      screen.getByRole("dialog", { name: "Crear usuario" }),
+    ).toBeInTheDocument();
+  });
+
   it("filtra por búsqueda y muestra el vacío correspondiente", async () => {
     stubQuery({ data: makeUserPage({ content: [] }) });
     const user = userEvent.setup();

@@ -8,6 +8,7 @@ import { UsersHeader } from "./UsersHeader";
 import { UserList } from "./UserList";
 import { UserPagination } from "./UserPagination";
 import { EditUserModal } from "./EditUserModal";
+import { CreateUserModal } from "./CreateUserModal";
 
 const PAGE_SIZE = 10;
 const DEBOUNCE_MS = 350;
@@ -17,6 +18,7 @@ export function UsersContent() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
+  const [creatingUser, setCreatingUser] = useState(false);
 
   useEffect(() => {
     const trimmedSearch = search.trim();
@@ -43,7 +45,7 @@ export function UsersContent() {
 
   return (
     <div className="flex flex-col gap-6">
-      <UsersHeader />
+      <UsersHeader onNewUser={() => setCreatingUser(true)} />
 
       <div className="relative sm:max-w-sm">
         <Search
@@ -89,6 +91,10 @@ export function UsersContent() {
           user={editingUser}
           onClose={() => setEditingUser(null)}
         />
+      )}
+
+      {creatingUser && (
+        <CreateUserModal onClose={() => setCreatingUser(false)} />
       )}
     </div>
   );

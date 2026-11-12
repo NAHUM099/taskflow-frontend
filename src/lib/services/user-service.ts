@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import type {
+  CreateUserRequest,
   UpdateUserRequest,
   UserListParams,
   UserPageResponse,
@@ -18,6 +19,13 @@ export async function getUsers(
   }
 
   const { data } = await api.get<UserPageResponse>("/users", { params: query });
+  return data;
+}
+
+export async function createUser(
+  request: CreateUserRequest,
+): Promise<UserResponse> {
+  const { data } = await api.post<UserResponse>("/users", request);
   return data;
 }
 

@@ -12,15 +12,15 @@
 1. **No existe `components/ui/`.** Botones, inputs, labels, badges, skeletons, bloques de error/vacío y
    cabeceras de "tabla" están repetidos en `Dashboard*`, `Tasks*` y `Users*`. Riesgo real: divergencia
    visual al tocar un solo sitio.
-2. **Sin pruebas E2E ni a11y automatizada**: la suite unitaria/integración (189 tests, 34 archivos) cubre
+2. **Sin pruebas E2E ni a11y automatizada**: la suite unitaria/integración (205 tests, 36 archivos) cubre
    `lib` (100 %), hooks (100 %), `AuthContext`, `components/*` y el flujo `401`/logout de punta a punta con
    jsdom, con 98 % de líneas globales (ver [testing.md](./testing.md)). Falta Playwright, `vitest-axe` y
    cualquier verificación contra el backend real. El CI ya ejecuta `npm run lint` y `npm run test:ci` antes
    del build.
 3. **Sin `error.tsx`, `not-found.tsx` ni `loading.tsx`**: un error de render cae en la pantalla por
    defecto de Next y un 404 no tiene diseño propio.
-4. **Validación de formularios triplicada** (`LoginForm`, `CreateTaskModal`, `EditUserModal`) sin esquema
-   compartido; los mensajes se repiten.
+4. **Validación de formularios cuadruplicada** (`LoginForm`, `CreateTaskModal`, `EditUserModal`,
+   `CreateUserModal`) sin esquema compartido; los mensajes se repiten.
 5. **Sin guard de entorno**: si `NEXT_PUBLIC_API_URL` no está definida, Axios usa rutas relativas y los
    fallos se vuelven confusos.
 6. **Hooks de datos fuera del `*Content`**: `RecentTasks` y `TaskStatusMenu` consultan/mutan por su
@@ -63,13 +63,15 @@
 17. **`UserResponse` del frontend no declara `active`** (el backend sí lo envía) ni `role` (el backend no
     lo devuelve en el listado); por eso la tabla de usuarios no muestra estado ni rol.
 18. **Endpoints sin usar**: `GET /users/{id}`, `PATCH /users/{id}/status`, `DELETE /users/{id}`,
-    `GET /users/{id}/tasks`, `PATCH /users/me/password`, `POST /users`.
+    `GET /users/{id}/tasks`, `PATCH /users/me/password`.
 19. **`createdAt` nunca se muestra** y no existe helper de formato de fechas.
 20. **`id: number | null`** en `TaskResponse`/`UserResponse` obliga a comprobaciones de nulidad en cada
     uso.
 21. **Inconsistencias de permisos backend/frontend**: `MODERATOR` puede crear tareas por API pero la UI
     restringe el alta a `ADMIN`, y ese rol recibiría `403` al cargar usuarios dentro del modal;
-    `PATCH /users/me/password` es ADMIN-only. Detalle en [api-contracts.md](./api-contracts.md).
+    `PATCH /users/me/password` es ADMIN-only. Además `POST /users` es **público** (`permitAll`) y crea
+    cuentas con rol `USER` sin verificación de email, mientras la UI solo lo ofrece dentro de
+    `/users` (ADMIN). Detalle en [api-contracts.md](./api-contracts.md).
 22. **Paginación de usuarios con doble fuente de verdad**: `UsersContent` guarda `page` en estado local pero
     `UserPagination` recibe `pageData.number` del servidor. Hoy coinciden; si el backend recortara la página
     pedida (p. ej. al borrar el último usuario de la última página) la UI quedaría desincronizada. Los tests

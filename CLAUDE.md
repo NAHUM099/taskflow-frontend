@@ -38,7 +38,8 @@ que vive en otro repositorio.
 - Dashboard con KPIs por estado (Total, Pendientes, En progreso, Completadas) y las 5 primeras tareas del
   listado (`tasks.slice(0, 5)`).
 - Tareas: listado, filtro por estado, creación y cambio de estado respetando transiciones válidas.
-- Usuarios (solo `ROLE_ADMIN`): listado paginado, búsqueda por nombre/email y edición de nombre/email.
+- Usuarios (solo `ROLE_ADMIN`): listado paginado, búsqueda por nombre/email, alta y edición de
+  nombre/email.
 - Roles: `ROLE_USER`, `ROLE_MODERATOR`, `ROLE_ADMIN`.
 
 | Repositorio | Ruta local | Remoto | Permiso |
@@ -47,7 +48,7 @@ que vive en otro repositorio.
 | Backend | `C:\SPRING-KOTLIN\taskflow-api\taskflow-api` | `github.com/NAHUM099/taskflow-api` | **Solo lectura**: se puede leer para respetar contratos, **nunca** modificar |
 
 Estado actual: MVP funcional conectado al backend real, tema oscuro único (sin toggle claro/oscuro) y
-**suite de pruebas automatizadas** con Vitest + Testing Library (189 tests, 34 archivos; detalle en
+**suite de pruebas automatizadas** con Vitest + Testing Library (205 tests, 36 archivos; detalle en
 [`docs/testing.md`](docs/testing.md)).
 
 ---
@@ -296,7 +297,7 @@ priorizable en [`docs/technical-debt.md`](docs/technical-debt.md).
 
 - **No existe `components/ui/`**: primitivos repetidos en `Dashboard*`, `Tasks*` y `Users*` (riesgo de
   divergencia visual). Cualquier primitivo nuevo debe justificarse y, si es posible, reutilizarse.
-- **Tests sin E2E ni a11y automatizada**: 189 tests / 34 archivos y 98 % de líneas (incluye `components/layout`,
+- **Tests sin E2E ni a11y automatizada**: 205 tests / 36 archivos y 98 % de líneas (incluye `components/layout`,
   `components/dashboard` y el flujo `401`/logout); faltan Playwright y `vitest-axe`. El CI ya ejecuta `lint` y
   `test:ci` además del build.
 - **Sin `error.tsx`, `not-found.tsx` ni `loading.tsx`**.
