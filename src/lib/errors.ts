@@ -1,9 +1,7 @@
-import axios from "axios";
+import axios, { type AxiosError } from "axios";
 
-function extractBackendMessage(error: unknown): string | undefined {
-  if (!axios.isAxiosError(error)) {
-    return undefined;
-  }
+// Solo se llama con un AxiosError ya validado; la respuesta puede traer el mensaje del backend.
+function getBackendMessage(error: AxiosError): string | undefined {
   const data = error.response?.data as { message?: unknown } | undefined;
   if (typeof data?.message === "string" && data.message.trim()) {
     return data.message;
@@ -26,7 +24,7 @@ export function getApiErrorMessage(
     return "No pudimos conectar con el servidor.";
   }
 
-  const message = extractBackendMessage(error);
+  const message = getBackendMessage(error);
 
   switch (error.response.status) {
     case 400:

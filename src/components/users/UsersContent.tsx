@@ -19,12 +19,19 @@ export function UsersContent() {
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
 
   useEffect(() => {
+    const trimmedSearch = search.trim();
+    // Sin cambio real no hay nada que debouncear: así el timer de montaje no
+    // devuelve la paginación a 0 después de la primera carga.
+    if (trimmedSearch === debouncedSearch) {
+      return;
+    }
+
     const timeout = setTimeout(() => {
-      setDebouncedSearch(search.trim());
+      setDebouncedSearch(trimmedSearch);
       setPage(0);
     }, DEBOUNCE_MS);
     return () => clearTimeout(timeout);
-  }, [search]);
+  }, [search, debouncedSearch]);
 
   const { data, isLoading, isError, isFetching, refetch } = useUsers({
     page,
