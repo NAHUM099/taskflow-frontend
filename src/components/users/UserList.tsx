@@ -6,9 +6,17 @@ interface UserListProps {
   users: UserResponse[];
   searching: boolean;
   onEdit: (user: UserResponse) => void;
+  onChangePassword: (user: UserResponse) => void;
+  onChangeStatus: (user: UserResponse) => void;
 }
 
-export function UserList({ users, searching, onEdit }: UserListProps) {
+export function UserList({
+  users,
+  searching,
+  onEdit,
+  onChangePassword,
+  onChangeStatus,
+}: UserListProps) {
   if (users.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-700/60 bg-slate-800 px-6 py-12 text-center">
@@ -32,7 +40,13 @@ export function UserList({ users, searching, onEdit }: UserListProps) {
 
       <ul className="flex flex-col gap-2">
         {users.map((user) => (
-          <UserCard key={user.id ?? user.email} user={user} onEdit={onEdit} />
+          <UserCard
+            key={user.id ?? user.email}
+            user={user}
+            onEdit={onEdit}
+            onChangePassword={onChangePassword}
+            onChangeStatus={onChangeStatus}
+          />
         ))}
       </ul>
     </div>

@@ -9,6 +9,8 @@ import { UserList } from "./UserList";
 import { UserPagination } from "./UserPagination";
 import { EditUserModal } from "./EditUserModal";
 import { CreateUserModal } from "./CreateUserModal";
+import { UpdateUserPasswordModal } from "./UpdateUserPasswordModal";
+import { UpdateUserStatusModal } from "./UpdateUserStatusModal";
 
 const PAGE_SIZE = 10;
 const DEBOUNCE_MS = 350;
@@ -18,6 +20,10 @@ export function UsersContent() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
+  const [changingPasswordUser, setChangingPasswordUser] =
+    useState<UserResponse | null>(null);
+  const [changingStatusUser, setChangingStatusUser] =
+    useState<UserResponse | null>(null);
   const [creatingUser, setCreatingUser] = useState(false);
 
   useEffect(() => {
@@ -72,6 +78,8 @@ export function UsersContent() {
             users={users}
             searching={debouncedSearch.length > 0}
             onEdit={setEditingUser}
+            onChangePassword={setChangingPasswordUser}
+            onChangeStatus={setChangingStatusUser}
           />
           {pageData && pageData.totalPages > 1 && (
             <UserPagination
@@ -90,6 +98,20 @@ export function UsersContent() {
         <EditUserModal
           user={editingUser}
           onClose={() => setEditingUser(null)}
+        />
+      )}
+
+      {changingPasswordUser && (
+        <UpdateUserPasswordModal
+          user={changingPasswordUser}
+          onClose={() => setChangingPasswordUser(null)}
+        />
+      )}
+
+      {changingStatusUser && (
+        <UpdateUserStatusModal
+          user={changingStatusUser}
+          onClose={() => setChangingStatusUser(null)}
         />
       )}
 
