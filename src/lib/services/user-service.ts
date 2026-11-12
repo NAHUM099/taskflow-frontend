@@ -1,6 +1,7 @@
 import { api } from "@/lib/api";
 import type {
   CreateUserRequest,
+  UpdateUserPasswordRequest,
   UpdateUserRequest,
   UserListParams,
   UserPageResponse,
@@ -36,3 +37,12 @@ export async function updateUser(
   const { data } = await api.patch<UserResponse>(`/users/${id}`, request);
   return data;
 }
+
+// El backend responde `204 No Content`: no hay cuerpo que devolver.
+export async function updateUserPassword(
+  id: number,
+  request: UpdateUserPasswordRequest,
+): Promise<void> {
+  await api.patch<void>(`/users/${id}/password`, request);
+}
+

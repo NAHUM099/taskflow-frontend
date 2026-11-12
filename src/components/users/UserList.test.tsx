@@ -6,13 +6,27 @@ import { UserList } from "./UserList";
 
 describe("UserList", () => {
   it("avisa cuando no hay usuarios registrados", () => {
-    render(<UserList users={[]} searching={false} onEdit={() => {}} />);
+    render(
+      <UserList
+        users={[]}
+        searching={false}
+        onEdit={() => {}}
+        onChangePassword={() => {}}
+      />,
+    );
 
     expect(screen.getByText("No hay usuarios registrados.")).toBeInTheDocument();
   });
 
   it("distingue el vacío por búsqueda", () => {
-    render(<UserList users={[]} searching onEdit={() => {}} />);
+    render(
+      <UserList
+        users={[]}
+        searching
+        onEdit={() => {}}
+        onChangePassword={() => {}}
+      />,
+    );
 
     expect(
       screen.getByText("No se encontraron usuarios para tu búsqueda."),
@@ -25,7 +39,14 @@ describe("UserList", () => {
       makeUser({ id: 2, name: "Luis Pérez", email: "luis@taskflow.dev" }),
     ];
 
-    render(<UserList users={users} searching={false} onEdit={() => {}} />);
+    render(
+      <UserList
+        users={users}
+        searching={false}
+        onEdit={() => {}}
+        onChangePassword={() => {}}
+      />,
+    );
 
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
     expect(screen.getAllByText("ana@taskflow.dev")).toHaveLength(2);
@@ -36,11 +57,40 @@ describe("UserList", () => {
     const user = userEvent.setup();
     const target = makeUser({ id: 5, name: "Luis Pérez" });
 
-    render(<UserList users={[target]} searching={false} onEdit={onEdit} />);
+    render(
+      <UserList
+        users={[target]}
+        searching={false}
+        onEdit={onEdit}
+        onChangePassword={() => {}}
+      />,
+    );
     await user.click(
       screen.getByRole("button", { name: "Editar usuario Luis Pérez" }),
     );
 
     expect(onEdit).toHaveBeenCalledWith(target);
+  });
+
+  it("entrega el usuario seleccionado al actualizar su contraseña", async () => {
+    const onChangePassword = vi.fn();
+    const user = userEvent.setup();
+    const target = makeUser({ id: 6, name: "Ana Torres" });
+
+    render(
+      <UserList
+        users={[target]}
+        searching={false}
+        onEdit={() => {}}
+        onChangePassword={onChangePassword}
+      />,
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: "Actualizar contraseña de Ana Torres",
+      }),
+    );
+
+    expect(onChangePassword).toHaveBeenCalledWith(target);
   });
 });

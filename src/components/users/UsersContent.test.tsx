@@ -172,6 +172,26 @@ describe("UsersContent", () => {
     ).toBeInTheDocument();
   });
 
+  it("abre el modal de contraseña al pulsar el botón de la fila", async () => {
+    stubQuery({
+      data: makeUserPage({
+        content: [makeUser({ id: 3, name: "Ana Torres" })],
+      }),
+    });
+    const user = userEvent.setup();
+
+    renderWithProviders(<UsersContent />);
+    await user.click(
+      screen.getByRole("button", {
+        name: "Actualizar contraseña de Ana Torres",
+      }),
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: "Actualizar contraseña" }),
+    ).toBeInTheDocument();
+  });
+
   it("abre el modal de creación al pulsar Nuevo usuario", async () => {
     stubQuery({ data: makeUserPage() });
     const user = userEvent.setup();

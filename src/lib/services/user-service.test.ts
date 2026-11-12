@@ -3,6 +3,7 @@ import {
   createUser,
   getUsers,
   updateUser,
+  updateUserPassword,
 } from "@/lib/services/user-service";
 import { makeUser, makeUserPage } from "@/test/factories";
 
@@ -120,5 +121,30 @@ describe("updateUser", () => {
     await expect(
       updateUser(4, { name: "x", email: "x@y.dev" }),
     ).rejects.toThrow("409");
+  });
+});
+
+describe("updateUserPassword", () => {
+  beforeEach(() => {
+    patch.mockReset();
+  });
+
+  it("hace PATCH /users/:id/password con la nueva contraseña", async () => {
+    patch.mockResolvedValue({ data: undefined });
+
+    await expect(
+      updateUserPassword(4, { newPassword: "nueva123" }),
+    ).resolves.toBeUndefined();
+    expect(patch).toHaveBeenCalledWith("/users/4/password", {
+      newPassword: "nueva123",
+    });
+  });
+
+  it("propaga los errores de la API", async () => {
+    patch.mockRejectedValue(new Error("404"));
+
+    await expect(
+      updateUserPassword(4, { newPassword: "nueva123" }),
+    ).rejects.toThrow("404");
   });
 });

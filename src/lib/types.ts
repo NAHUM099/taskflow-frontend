@@ -43,6 +43,12 @@ export interface UpdateUserRequest {
   email: string;
 }
 
+// Endpoint ADMIN (`PATCH /users/{id}/password`): el backend exige `newPassword`
+// (mín. 6) y no pide la contraseña anterior.
+export interface UpdateUserPasswordRequest {
+  newPassword: string;
+}
+
 export interface UserPageResponse {
   content: UserResponse[];
   totalElements: number;
