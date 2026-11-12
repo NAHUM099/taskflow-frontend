@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getUsers, updateUser } from "@/lib/services/user-service";
+import {
+  createUser,
+  getUsers,
+  updateUser,
+} from "@/lib/services/user-service";
 import { makeUser, makeUserPage } from "@/test/factories";
 
-const { get, patch } = vi.hoisted(() => ({
+const { get, post, patch } = vi.hoisted(() => ({
   get: vi.fn(),
+  post: vi.fn(),
   patch: vi.fn(),
 }));
 
-vi.mock("@/lib/api", () => ({ api: { get, patch } }));
+vi.mock("@/lib/api", () => ({ api: { get, post, patch } }));
 
 describe("getUsers", () => {
   beforeEach(() => {
@@ -52,6 +57,42 @@ describe("getUsers", () => {
     expect(get).toHaveBeenCalledWith("/users", {
       params: { page: 0, size: 10 },
     });
+  });
+});
+
+describe("createUser", () => {
+  beforeEach(() => {
+    post.mockReset();
+  });
+
+  it("hace POST /users con el cuerpo recibido", async () => {
+    const user = makeUser({
+      id: 9,
+      name: "Luis Pérez",
+      email: "luis@taskflow.dev",
+    });
+    post.mockResolvedValue({ data: user });
+
+    await expect(
+      createUser({
+        name: "Luis Pérez",
+        email: "luis@taskflow.dev",
+        password: "secreta123",
+      }),
+    ).resolves.toEqual(user);
+    expect(post).toHaveBeenCalledWith("/users", {
+      name: "Luis Pérez",
+      email: "luis@taskflow.dev",
+      password: "secreta123",
+    });
+  });
+
+  it("propaga los errores de la API", async () => {
+    post.mockRejectedValue(new Error("409"));
+
+    await expect(
+      createUser({ name: "Luis", email: "luis@taskflow.dev", password: "secreta123" }),
+    ).rejects.toThrow("409");
   });
 });
 

@@ -7,7 +7,8 @@ Aplicación full-stack de gestión de tareas y usuarios. Incluye autenticación 
 - Autenticación con JWT (login/logout y protección de rutas).
 - Dashboard con KPIs (total, pendientes, en progreso, completadas) y las 5 tareas más recientes.
 - Gestión de tareas: listado, filtro por estado, creación y cambio de estado con transiciones válidas.
-- Gestión de usuarios (solo `ADMIN`): listado paginado, búsqueda por nombre/email y edición de nombre/email.
+- Gestión de usuarios (solo `ADMIN`): listado paginado, búsqueda por nombre/email, alta y edición de
+  nombre/email.
 - Roles: `USER`, `MODERATOR`, `ADMIN`.
 - Manejo de errores con mensajes amigables (400/401/403/404/409/500/network).
 - Estados de UI: loading (skeletons), error (con reintento) y empty state.

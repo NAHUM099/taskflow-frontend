@@ -55,11 +55,11 @@ src/
 │  ├─ tasks/                       # TasksContent, TasksHeader, TaskFilters, TaskList, TaskCard,
 │  │                               # TaskStatusBadge, TaskStatusMenu, CreateTaskModal
 │  └─ users/                       # UsersContent, UsersHeader, UserList, UserCard,
-│                                  # UserPagination, EditUserModal
+│                                  # UserPagination, EditUserModal, CreateUserModal
 ├─ context/AuthContext.tsx         # AuthProvider + useAuth
 ├─ hooks/
 │  ├─ queries/                     # useTasks, useUsers
-│  └─ mutations/                   # useCreateTask, useUpdateTaskStatus, useUpdateUser
+│  └─ mutations/                   # useCreateTask, useUpdateTaskStatus, useUpdateUser, useCreateUser
 └─ lib/
    ├─ api.ts                       # instancia única de Axios + interceptores
    ├─ errors.ts                    # getApiErrorMessage (mapeo HTTP → mensaje en español)
@@ -213,9 +213,9 @@ respuesta → "No pudimos conectar con el servidor."
 ## 10. Componentes: server vs client
 
 - `"use client"` **solo** en el punto de entrada cliente de cada rama del árbol. Hoy lo declaran
-  exactamente 14 archivos: `LoginForm`, `RequireAuth`, `RequireAdmin`, `DashboardShell`, `Header`,
+  exactamente 15 archivos: `LoginForm`, `RequireAuth`, `RequireAdmin`, `DashboardShell`, `Header`,
   `Sidebar`, `QueryProvider`, `AuthContext`, `DashboardContent`, `TasksContent`, `CreateTaskModal`,
-  `TaskStatusMenu`, `UsersContent`, `EditUserModal`.
+  `TaskStatusMenu`, `UsersContent`, `EditUserModal`, `CreateUserModal`.
 - El resto de componentes (`TaskCard`, `TaskList`, `TasksHeader`, `TaskFilters`, `TaskStatusBadge`,
   `TaskRow`, `RecentTasks`, `DashboardStats`, `UserCard`, `UserList`, `UsersHeader`, `UserPagination`) son
   **componentes cliente por transitividad**: no llevan la directiva porque siempre se importan desde un

@@ -16,13 +16,13 @@
 | `PATCH` | `/tasks/{id}/status` | `updateTaskStatus()` | `useUpdateTaskStatus` → `TaskStatusMenu` | Body `{ status }` |
 | `GET` | `/users?page&size&search` | `getUsers()` (`src/lib/services/user-service.ts`) | `useUsers` → `UsersContent`, `CreateTaskModal` | Solo `ROLE_ADMIN` |
 | `PATCH` | `/users/{id}` | `updateUser()` | `useUpdateUser` → `EditUserModal` | Body `{ name, email }`; solo `ROLE_ADMIN` |
+| `POST` | `/users` | `createUser()` | `useCreateUser` → `CreateUserModal` | Público en el backend; la UI lo muestra solo a `ROLE_ADMIN`. Body `{ name, email, password }` (mín. 6); rol forzado a `USER` |
 
 ---
 
 ## 2. Endpoints existentes en el backend **no** utilizados todavía
 
 - `GET /users/{id}` — detalle de usuario.
-- `POST /users` — registro (público).
 - `PATCH /users/{id}/status` — activar/desactivar usuario.
 - `PATCH /users/me/password` — cambio de contraseña (queda bajo `/users/**`, es decir, **solo ADMIN**).
 - `DELETE /users/{id}` — eliminación.
@@ -34,7 +34,7 @@
 
 | Regla | Efecto en el frontend |
 | --- | --- |
-| `POST /auth/login` y `POST /users` → `permitAll` | Públicos |
+| `POST /auth/login` y `POST /users` → `permitAll` | Públicos; la UI solo ofrece el alta de usuarios a `ADMIN` |
 | `/users/**` → `hasRole("ADMIN")` | **Todo** el módulo de usuarios exige ADMIN, incluido `/users/me/password` |
 | `POST /tasks` → `ADMIN` o `MODERATOR` | Un `MODERATOR` **puede** crear tareas por API, pero la UI solo muestra el botón a ADMIN |
 | Cualquier otra ruta → autenticado | Requiere JWT válido |
@@ -54,6 +54,7 @@ TaskResponse        { id: number|null, title, description, status, userId: numbe
 CreateTaskRequest   { title, description, userId }
 StatusRequest       { status }
 UserResponse        { id: number|null, name, email, active }     # el backend SÍ envía "active"
+CreateUserRequest   { name, email, password }                   # password: @Size(min = 6); rol forzado USER
 UpdateUserRequest   { name, email }
 Page<UserResponse>  { content, totalElements, totalPages, number, size, first, last,
                       numberOfElements, empty, … }

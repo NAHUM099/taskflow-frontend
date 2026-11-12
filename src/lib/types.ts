@@ -31,6 +31,13 @@ export interface UserResponse {
   email: string;
 }
 
+// El backend (CreateUserRequest) exige password (mín. 6) y asigna ROLE_USER.
+export interface CreateUserRequest {
+  name: string;
+  email: string;
+  password: string;
+}
+
 export interface UpdateUserRequest {
   name: string;
   email: string;

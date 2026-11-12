@@ -131,7 +131,7 @@ Exclusiones: `src/app/**` (archivos de ruta de 1–2 líneas), `src/test/**`, `*
 (solo interfaces), `*.d.ts` y `src/components/providers/QueryProvider.tsx` (solo configura `staleTime`/`retry`:
 probar el cliente de React Query no da señal sobre nuestro código).
 
-Cobertura real al cierre (189 tests, 34 archivos):
+Cobertura real al cierre (205 tests, 36 archivos):
 
 | Área | Líneas | Ramas |
 | --- | --- | --- |
@@ -142,7 +142,7 @@ Cobertura real al cierre (189 tests, 34 archivos):
 | `src/components/dashboard` | 100 % | 90 % (fallback `id ?? title` en `RecentTasks`) |
 | `src/components/layout` | 98 % | 97 % (`Mi perfil` y el `id` del enlace) |
 | `src/components/tasks` | 98 % | 94 % |
-| `src/components/users` | 95 % | 95 % |
+| `src/components/users` | 96 % | 97 % |
 | **Global** | **98 %** | **97 %** |
 
 Líneas que quedan sin cubrir a propósito (no son huecos accidentales):
