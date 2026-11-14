@@ -12,7 +12,7 @@
 1. **No existe `components/ui/`.** Botones, inputs, labels, badges, skeletons, bloques de error/vacío y
    cabeceras de "tabla" están repetidos en `Dashboard*`, `Tasks*` y `Users*`. Riesgo real: divergencia
    visual al tocar un solo sitio.
-2. **Sin pruebas E2E ni a11y automatizada**: la suite unitaria/integración (239 tests, 40 archivos) cubre
+2. **Sin pruebas E2E ni a11y automatizada**: la suite unitaria/integración (258 tests, 43 archivos) cubre
    `lib` (100 %), hooks (100 %), `AuthContext`, `components/*` y el flujo `401`/logout de punta a punta con
    jsdom, con 98 % de líneas globales (ver [testing.md](./testing.md)). Falta Playwright, `vitest-axe` y
    cualquier verificación contra el backend real. El CI ya ejecuta `npm run lint` y `npm run test:ci` antes

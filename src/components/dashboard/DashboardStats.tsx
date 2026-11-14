@@ -1,37 +1,33 @@
 import { CircleCheck, Clock, LayoutList, Loader } from "lucide-react";
-import type { TaskResponse, TaskStatus } from "@/lib/types";
+import type { TaskSummaryResponse } from "@/lib/types";
 
 interface DashboardStatsProps {
-  tasks: TaskResponse[];
+  summary: TaskSummaryResponse;
 }
 
-function countByStatus(tasks: TaskResponse[], status: TaskStatus): number {
-  return tasks.filter((task) => task.status === status).length;
-}
-
-export function DashboardStats({ tasks }: DashboardStatsProps) {
+export function DashboardStats({ summary }: DashboardStatsProps) {
   const cards = [
     {
       label: "Total",
-      value: tasks.length,
+      value: summary.total,
       icon: LayoutList,
       iconClass: "text-slate-300",
     },
     {
       label: "Pendientes",
-      value: countByStatus(tasks, "PENDING"),
+      value: summary.pending,
       icon: Clock,
       iconClass: "text-cyan-300",
     },
     {
       label: "En progreso",
-      value: countByStatus(tasks, "IN_PROGRESS"),
+      value: summary.inProgress,
       icon: Loader,
       iconClass: "text-amber-300",
     },
     {
       label: "Completadas",
-      value: countByStatus(tasks, "DONE"),
+      value: summary.done,
       icon: CircleCheck,
       iconClass: "text-emerald-300",
     },

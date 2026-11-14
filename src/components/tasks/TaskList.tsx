@@ -21,7 +21,7 @@ export function TaskList({
         <Inbox className="size-8 text-slate-600" aria-hidden="true" />
         <p className="text-sm text-slate-400">
           {filtered
-            ? "No hay tareas con este estado."
+            ? "No hay tareas que coincidan con los filtros."
             : "No hay tareas todavía."}
         </p>
         {!filtered && canCreate && (

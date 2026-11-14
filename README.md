@@ -1,12 +1,12 @@
 # TaskFlow
 
-Aplicación full-stack de gestión de tareas y usuarios. Incluye autenticación JWT, un dashboard con métricas, un módulo de tareas con control de estados y un módulo de administración de usuarios con búsqueda y paginación.
+Aplicación full-stack de gestión de tareas y usuarios. Incluye autenticación JWT, un dashboard con métricas, un módulo de tareas con búsqueda, paginación y control de estados, y un módulo de administración de usuarios con búsqueda y paginación.
 
 ## Características
 
 - Autenticación con JWT (login/logout y protección de rutas).
 - Dashboard con KPIs (total, pendientes, en progreso, completadas) y las 5 tareas más recientes.
-- Gestión de tareas: listado, filtro por estado, creación y cambio de estado con transiciones válidas.
+- Gestión de tareas: listado paginado, búsqueda por nombre, filtro por estado, creación y cambio de estado con transiciones válidas.
 - Gestión de usuarios (solo `ADMIN`): listado paginado, búsqueda por nombre/email, alta, edición de
   nombre/email, restablecimiento de contraseña y activación/inactivación de cuentas.
 - Roles: `USER`, `MODERATOR`, `ADMIN`.
@@ -58,6 +58,9 @@ En el frontend la comunicación HTTP está centralizada en una única instancia 
 - `401` → se limpia la sesión y se redirige a `/login`.
 - `403` → no se cierra la sesión; se muestra el error de autorización.
 - Autorización por rol en backend: `/users/**` requiere `ROLE_ADMIN`. `POST /users` y `POST /auth/login` son públicos.
+- Alcance de tareas por rol: en `GET /tasks`, `GET /tasks/summary` y `PATCH /tasks/{id}/status` un
+  `ROLE_USER` solo ve y mueve sus propias tareas (el backend ignora cualquier `userId` de la URL);
+  `ROLE_MODERATOR` y `ROLE_ADMIN` ven todas.
 
 ## Instalación
 
@@ -103,7 +106,8 @@ Frontend (`.env.local`, ignorado por git):
 
 1. Inicia sesión en `/login` con un usuario válido.
 2. El Dashboard muestra las métricas y las 5 tareas recientes.
-3. En `/tasks` lista, filtra, crea y cambia el estado de las tareas.
+3. En `/tasks` busca, filtra, pagina, crea y cambia el estado de las tareas. Un `ROLE_USER` solo ve las
+   suyas (lo impone el backend); `ADMIN` y `MODERATOR` ven todas.
 4. En `/users` (solo `ADMIN`) busca, pagina, edita usuarios, restablece su contraseña e inactiva o
    reactiva cuentas.
 
@@ -133,8 +137,8 @@ taskflow-api/taskflow-api/
 
 ## Testing
 
-- Backend: `TaskflowApiApplicationTests.contextLoads()` (`@SpringBootTest`). Requiere PostgreSQL y las variables de entorno del backend. Ejecutar con `./gradlew test`.
-- Frontend: no existe framework de tests automatizado. La validación se realiza con `npm run lint` y `npm run build` (type checking incluido).
+- Backend: `./gradlew test` ejecuta `TaskflowApiApplicationTests.contextLoads()` (`@SpringBootTest`, requiere PostgreSQL y las variables de entorno) y los unitarios de servicio con Mockito (p. ej. `TaskServiceTest`).
+- Frontend: Vitest + Testing Library (258 tests, 43 archivos) con umbrales de cobertura en `vitest.config.mts`. Comandos: `npm run test`, `npm run test:coverage`, `npm run test:ci`; para validación estática, `npm run lint` y `npx tsc --noEmit`. Detalle en [docs/testing.md](docs/testing.md).
 
 ## Estado del proyecto
 
@@ -145,7 +149,8 @@ MVP funcional: autenticación, dashboard, tareas y usuarios conectados al backen
 - El JWT se almacena en `localStorage`; una mejora futura es migrar a cookie `httpOnly` + protección server-side (proxy/DAL).
 - No hay refresh token (el backend no lo soporta).
 - El modal no implementa "focus trap" avanzado (solo cierre con Escape/overlay).
-- `POST /tasks` no está restringido por rol en el backend (la UI limita la creación a `ADMIN`); la política de creación de tareas queda pendiente de definir a nivel backend.
+- `POST /tasks` está limitado a `ADMIN`/`MODERATOR` en el backend, pero la UI solo ofrece el alta a
+  `ADMIN`; un `MODERATOR` recibiría `403` al abrir el modal porque este carga usuarios con `GET /users`
+  (ADMIN-only).
 - `GET /users` no devuelve `role` (`UserResponse` = id, name, email, active), por lo que la tabla de usuarios no muestra una columna de rol.
-- Sin infraestructura de tests automatizados en el frontend.
 
