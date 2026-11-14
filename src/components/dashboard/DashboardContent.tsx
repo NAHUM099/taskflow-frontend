@@ -1,25 +1,46 @@
 "use client";
 
 import { CircleAlert, RotateCw } from "lucide-react";
+import { useTaskSummary } from "@/hooks/queries/useTaskSummary";
 import { useTasks } from "@/hooks/queries/useTasks";
 import { DashboardStats } from "./DashboardStats";
 import { RecentTasks } from "./RecentTasks";
 
+const RECENT_TASKS_LIMIT = 5;
+
 export function DashboardContent() {
-  const { data, isLoading, isError, refetch } = useTasks();
-  const tasks = data ?? [];
+  const summaryQuery = useTaskSummary();
+  // El dashboard solo muestra las últimas 5 tareas y los totales vienen del
+  // resumen, así que no necesita traerse el listado completo.
+  const recentQuery = useTasks({ page: 0, size: RECENT_TASKS_LIMIT });
+
+  const isLoading = summaryQuery.isLoading || recentQuery.isLoading;
+  const isError = summaryQuery.isError || recentQuery.isError;
+  const summary = summaryQuery.data;
+  const tasks = recentQuery.data?.content ?? [];
 
   if (isLoading) {
     return <DashboardSkeleton />;
   }
 
   if (isError) {
-    return <DashboardError onRetry={() => refetch()} />;
+    return (
+      <DashboardError
+        onRetry={() => {
+          summaryQuery.refetch();
+          recentQuery.refetch();
+        }}
+      />
+    );
+  }
+
+  if (!summary) {
+    return <DashboardSkeleton />;
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <DashboardStats tasks={tasks} />
+      <DashboardStats summary={summary} />
       <RecentTasks tasks={tasks} />
     </div>
   );

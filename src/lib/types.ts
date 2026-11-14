@@ -23,6 +23,32 @@ export interface StatusRequest {
 export interface TaskFilters {
   status?: TaskStatus;
   userId?: number;
+  search?: string;
+}
+
+export interface TaskListParams extends TaskFilters {
+  page?: number;
+  size?: number;
+}
+
+export interface TaskPageResponse {
+  content: TaskResponse[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+  last: boolean;
+  first: boolean;
+  numberOfElements: number;
+  empty: boolean;
+}
+
+export interface TaskSummaryResponse {
+  total: number;
+  pending: number;
+  inProgress: number;
+  done: number;
+  cancelled: number;
 }
 
 // `active` lo envía el backend (UserResponse.kt), pero se declara opcional para no

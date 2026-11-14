@@ -1,8 +1,8 @@
 # Contratos de API — TaskFlow Frontend
 
-> Lo que el frontend consume y lo que el backend impone, leído del repositorio `taskflow-api` el
-> **2026-10-11**. Fuente de verdad: el backend. **No modificar el backend.**
-> Punto de entrada: [../CLAUDE.md](../CLAUDE.md). Capas y servicios: [architecture.md](./architecture.md).
+> Lo que el frontend consume y lo que el backend impone. Fuente de verdad: el backend.
+> Actualizado el **2026-11-13** (alcance de tareas por rol). Punto de entrada:
+> [../CLAUDE.md](../CLAUDE.md). Capas y servicios: [architecture.md](./architecture.md).
 
 ---
 
@@ -11,9 +11,10 @@
 | Método | Ruta | Servicio | Consumidor | Notas |
 | --- | --- | --- | --- | --- |
 | `POST` | `/auth/login` | `login()` (`src/lib/auth/auth-service.ts`) | `LoginForm` | Público. Body `{ email, password }` → `{ token }` |
-| `GET` | `/tasks?status&userId` | `getTasks()` (`src/lib/services/task-service.ts`) | `useTasks` → `DashboardContent`, `TasksContent` | Ambos filtros opcionales |
+| `GET` | `/tasks?page&size&status&userId&search` | `getTasks()` (`src/lib/services/task-service.ts`) | `useTasks` → `TasksContent`, `DashboardContent` | Devuelve `Page<TaskResponse>`; `page`/`size` por defecto `0`/`10` y orden `createdAt DESC`. Filtros y búsqueda opcionales. **Un `ROLE_USER` solo recibe sus tareas**: el backend ignora `userId` y fuerza el del JWT |
+| `GET` | `/tasks/summary` | `getTaskSummary()` | `useTaskSummary` → `DashboardContent` | Conteos por estado para las tarjetas del dashboard; requiere sesión y aplica el mismo alcance por rol que `/tasks` |
 | `POST` | `/tasks` | `createTask()` | `useCreateTask` → `CreateTaskModal` | La UI lo muestra solo a `ROLE_ADMIN` |
-| `PATCH` | `/tasks/{id}/status` | `updateTaskStatus()` | `useUpdateTaskStatus` → `TaskStatusMenu` | Body `{ status }` |
+| `PATCH` | `/tasks/{id}/status` | `updateTaskStatus()` | `useUpdateTaskStatus` → `TaskStatusMenu` | Body `{ status }`. Un `ROLE_USER` recibe `403` si la tarea está asignada a otra persona |
 | `GET` | `/users?page&size&search` | `getUsers()` (`src/lib/services/user-service.ts`) | `useUsers` → `UsersContent`, `CreateTaskModal` | Solo `ROLE_ADMIN` |
 | `PATCH` | `/users/{id}` | `updateUser()` | `useUpdateUser` → `EditUserModal` | Body `{ name, email }`; solo `ROLE_ADMIN` |
 | `PATCH` | `/users/{id}/status` | `updateUserStatus()` | `useUpdateUserStatus` → `UpdateUserStatusModal` | Body `{ active: boolean }`; responde el `UserResponse` actualizado; solo `ROLE_ADMIN` |
@@ -27,7 +28,9 @@
 - `GET /users/{id}` — detalle de usuario.
 - `PATCH /users/me/password` — cambio de contraseña (queda bajo `/users/**`, es decir, **solo ADMIN**).
 - `DELETE /users/{id}` — eliminación.
-- `GET /users/{id}/tasks` — tareas de un usuario.
+- `GET /users/{id}/tasks` — tareas de un usuario. Es **ADMIN-only** (cae bajo `/users/**`) y devuelve
+  `List<TaskResponse>` sin paginar ni buscar, por lo que **no** se usa para el alcance por rol: eso lo
+  resuelve `GET /tasks` a partir del JWT.
 
 ---
 
@@ -46,6 +49,20 @@ al abrir el modal de creación de tareas, porque `CreateTaskModal` carga usuario
 (ADMIN-only); y `PATCH /users/me/password` no es accesible a usuarios normales pese a ser su propia
 contraseña.
 
+### Alcance de tareas por rol (`TaskService.kt`, no `SecurityConfig`)
+
+`GET /tasks`, `GET /tasks/summary` y `PATCH /tasks/{id}/status` aceptan a cualquier autenticado, pero
+`TaskService` resuelve el alcance con el **email del JWT** (`Authentication.name` → `UserRepository`):
+
+| Rol | `GET /tasks` | `GET /tasks/summary` | `PATCH /tasks/{id}/status` |
+| --- | --- | --- | --- |
+| `ROLE_USER` | Solo sus tareas; `?userId=` se ignora y se fuerza el propio. `?status`/`?search` se combinan con ese alcance | Solo sus conteos | Solo tareas propias; si no lo es → `403` (`TaskAccessDeniedException`) |
+| `ROLE_MODERATOR` / `ROLE_ADMIN` | Todas; `?userId=` se respeta | Conteos globales | Cualquier tarea |
+
+Consecuencias para el frontend: no hace falta filtrar por usuario en cliente ni cambiar tipos ni
+servicios (`Page<TaskResponse>` y `TaskSummaryResponse` no cambian). El `userId` que llega desde el
+cliente no es un mecanismo de autorización.
+
 ---
 
 ## 4. Formas de datos
@@ -61,6 +78,9 @@ UpdateUserStatusRequest { active }                              # solo ADMIN; re
 UpdateUserPasswordRequest { newPassword }                        # @Size(min = 6); solo ADMIN, sin contraseña previa
 Page<UserResponse>  { content, totalElements, totalPages, number, size, first, last,
                       numberOfElements, empty, … }
+Page<TaskResponse>  { content, totalElements, totalPages, number, size, first, last,
+                      numberOfElements, empty, … }
+TaskSummaryResponse { total, pending, inProgress, done, cancelled }
 ErrorResponse       { timestamp, status, message, path, details } # el frontend solo lee "message"
 ```
 
@@ -82,6 +102,9 @@ manda el backend.
   un componente sin un helper compartido.
 - Tipos `id: number | null` obligan a comprobaciones de nulidad antes de usarlos como key o en URLs.
 - Ninguna URL de API se escribe fuera de `src/lib/services/*-service.ts`.
+- **No filtrar tareas por usuario en el cliente**: el alcance por rol lo impone el backend en
+  `GET /tasks`, `GET /tasks/summary` y `PATCH /tasks/{id}/status`. Filtrar en cliente daría una falsa
+  sensación de seguridad y rompería el dashboard (que consume el resumen, no la lista).
 
 ---
 
