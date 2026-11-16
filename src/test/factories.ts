@@ -23,6 +23,7 @@ export function makeUser(overrides: Partial<UserResponse> = {}): UserResponse {
     id: 1,
     name: "Ana Torres",
     email: "ana@taskflow.dev",
+    active: true,
     ...overrides,
   };
 }

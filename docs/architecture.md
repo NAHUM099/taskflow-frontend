@@ -55,11 +55,13 @@ src/
 │  ├─ tasks/                       # TasksContent, TasksHeader, TaskFilters, TaskList, TaskCard,
 │  │                               # TaskStatusBadge, TaskStatusMenu, CreateTaskModal
 │  └─ users/                       # UsersContent, UsersHeader, UserList, UserCard,
-│                                  # UserPagination, EditUserModal, CreateUserModal
+│                                  # UserPagination, EditUserModal, CreateUserModal,
+│                                  # UpdateUserPasswordModal, UpdateUserStatusModal
 ├─ context/AuthContext.tsx         # AuthProvider + useAuth
 ├─ hooks/
 │  ├─ queries/                     # useTasks, useUsers
-│  └─ mutations/                   # useCreateTask, useUpdateTaskStatus, useUpdateUser, useCreateUser
+│  └─ mutations/                   # useCreateTask, useUpdateTaskStatus, useUpdateUser,
+│                                  # useCreateUser, useUpdateUserPassword, useUpdateUserStatus
 └─ lib/
    ├─ api.ts                       # instancia única de Axios + interceptores
    ├─ errors.ts                    # getApiErrorMessage (mapeo HTTP → mensaje en español)
@@ -83,7 +85,7 @@ src/
 | `/login` | `src/app/login/page.tsx` | inverso: si hay sesión redirige a `/` | Formulario de login |
 | `/` | `src/app/(dashboard)/page.tsx` | `RequireAuth` | KPIs + 5 tareas recientes |
 | `/tasks` | `src/app/(dashboard)/tasks/page.tsx` | `RequireAuth` | Filtro, listado, alta (ADMIN) y cambio de estado |
-| `/users` | `src/app/(dashboard)/users/page.tsx` | `RequireAuth` + `RequireAdmin` | Búsqueda, paginación y edición |
+| `/users` | `src/app/(dashboard)/users/page.tsx` | `RequireAuth` + `RequireAdmin` | Búsqueda, paginación, edición, contraseña y activación de usuarios |
 
 No existen: `middleware.ts`, `error.tsx`, `global-error.tsx`, `not-found.tsx`, `loading.tsx`, Route
 Handlers (`route.ts`) ni Server Actions.
@@ -213,9 +215,10 @@ respuesta → "No pudimos conectar con el servidor."
 ## 10. Componentes: server vs client
 
 - `"use client"` **solo** en el punto de entrada cliente de cada rama del árbol. Hoy lo declaran
-  exactamente 15 archivos: `LoginForm`, `RequireAuth`, `RequireAdmin`, `DashboardShell`, `Header`,
+  exactamente 17 archivos: `LoginForm`, `RequireAuth`, `RequireAdmin`, `DashboardShell`, `Header`,
   `Sidebar`, `QueryProvider`, `AuthContext`, `DashboardContent`, `TasksContent`, `CreateTaskModal`,
-  `TaskStatusMenu`, `UsersContent`, `EditUserModal`, `CreateUserModal`.
+  `TaskStatusMenu`, `UsersContent`, `EditUserModal`, `CreateUserModal`, `UpdateUserPasswordModal`,
+  `UpdateUserStatusModal`.
 - El resto de componentes (`TaskCard`, `TaskList`, `TasksHeader`, `TaskFilters`, `TaskStatusBadge`,
   `TaskRow`, `RecentTasks`, `DashboardStats`, `UserCard`, `UserList`, `UsersHeader`, `UserPagination`) son
   **componentes cliente por transitividad**: no llevan la directiva porque siempre se importan desde un
