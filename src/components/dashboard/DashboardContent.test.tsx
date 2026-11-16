@@ -1,25 +1,48 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { makeTask } from "@/test/factories";
+import { makeTask, makeTaskPage, makeTaskSummary } from "@/test/factories";
 import { renderWithProviders } from "@/test/render";
 import { DashboardContent } from "./DashboardContent";
 
-const { useTasksMock, refetchMock } = vi.hoisted(() => ({
-  useTasksMock: vi.fn(),
-  refetchMock: vi.fn(),
-}));
+const { useTasksMock, useTaskSummaryMock, refetchTasksMock, refetchSummaryMock } =
+  vi.hoisted(() => ({
+    useTasksMock: vi.fn(),
+    useTaskSummaryMock: vi.fn(),
+    refetchTasksMock: vi.fn(),
+    refetchSummaryMock: vi.fn(),
+  }));
 
 vi.mock("@/hooks/queries/useTasks", () => ({ useTasks: useTasksMock }));
+vi.mock("@/hooks/queries/useTaskSummary", () => ({
+  useTaskSummary: useTaskSummaryMock,
+}));
 
 interface QueryResult {
-  data?: ReturnType<typeof makeTask>[];
+  tasks?: ReturnType<typeof makeTask>[];
+  summary?: ReturnType<typeof makeTaskSummary>;
   isLoading?: boolean;
   isError?: boolean;
 }
 
-function stubQuery({ data, isLoading = false, isError = false }: QueryResult) {
-  useTasksMock.mockReturnValue({ data, isLoading, isError, refetch: refetchMock });
+function stubQuery({
+  tasks = [],
+  summary = makeTaskSummary(),
+  isLoading = false,
+  isError = false,
+}: QueryResult) {
+  useTasksMock.mockReturnValue({
+    data: makeTaskPage({ content: tasks }),
+    isLoading,
+    isError,
+    refetch: refetchTasksMock,
+  });
+  useTaskSummaryMock.mockReturnValue({
+    data: summary,
+    isLoading,
+    isError,
+    refetch: refetchSummaryMock,
+  });
 }
 
 // Lee el número de cada tarjeta: span(label) -> fila -> tarjeta -> p(valor).
@@ -32,16 +55,18 @@ function statValue(label: string): string | null | undefined {
 
 describe("DashboardContent", () => {
   beforeEach(() => {
-    refetchMock.mockReset();
+    refetchTasksMock.mockReset();
+    refetchSummaryMock.mockReset();
   });
 
-  it("resume las tareas por estado", () => {
+  it("resume las tareas por estado desde el resumen", () => {
     stubQuery({
-      data: [
-        makeTask({ id: 1, status: "PENDING" }),
-        makeTask({ id: 2, status: "PENDING" }),
-        makeTask({ id: 3, status: "IN_PROGRESS" }),
-      ],
+      summary: makeTaskSummary({
+        total: 3,
+        pending: 2,
+        inProgress: 1,
+        done: 0,
+      }),
     });
 
     renderWithProviders(<DashboardContent />);
@@ -50,13 +75,15 @@ describe("DashboardContent", () => {
     expect(statValue("Pendientes")).toBe("2");
     expect(statValue("En progreso")).toBe("1");
     expect(statValue("Completadas")).toBe("0");
+    // El dashboard solo pide la primera página con las recientes.
+    expect(useTasksMock).toHaveBeenCalledWith({ page: 0, size: 5 });
   });
 
   it("limita las tareas recientes a cinco", () => {
     const tasks = Array.from({ length: 7 }, (_, index) =>
       makeTask({ id: index + 1, title: `Tarea ${index + 1}` }),
     );
-    stubQuery({ data: tasks });
+    stubQuery({ tasks });
 
     renderWithProviders(<DashboardContent />);
 
@@ -66,7 +93,16 @@ describe("DashboardContent", () => {
   });
 
   it("invita a crear la primera tarea cuando no hay ninguna", () => {
-    stubQuery({ data: [] });
+    stubQuery({
+      tasks: [],
+      summary: makeTaskSummary({
+        total: 0,
+        pending: 0,
+        inProgress: 0,
+        done: 0,
+        cancelled: 0,
+      }),
+    });
 
     renderWithProviders(<DashboardContent />);
 
@@ -76,6 +112,26 @@ describe("DashboardContent", () => {
 
   it("muestra placeholders mientras carga", () => {
     stubQuery({ isLoading: true });
+
+    renderWithProviders(<DashboardContent />);
+
+    expect(screen.queryByText("Total")).not.toBeInTheDocument();
+    expect(screen.queryByText("Tareas recientes")).not.toBeInTheDocument();
+  });
+
+  it("mantiene los placeholders si el resumen todavía no tiene datos", () => {
+    useTasksMock.mockReturnValue({
+      data: makeTaskPage(),
+      isLoading: false,
+      isError: false,
+      refetch: refetchTasksMock,
+    });
+    useTaskSummaryMock.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: false,
+      refetch: refetchSummaryMock,
+    });
 
     renderWithProviders(<DashboardContent />);
 
@@ -95,6 +151,7 @@ describe("DashboardContent", () => {
 
     await user.click(screen.getByRole("button", { name: /Reintentar/ }));
 
-    expect(refetchMock).toHaveBeenCalledTimes(1);
+    expect(refetchTasksMock).toHaveBeenCalledTimes(1);
+    expect(refetchSummaryMock).toHaveBeenCalledTimes(1);
   });
 });

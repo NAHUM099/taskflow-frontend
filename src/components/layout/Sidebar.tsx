@@ -160,8 +160,8 @@ function SidebarContent({
               aria-current={active ? "page" : undefined}
               className={`group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                 active
-                  ? "bg-indigo-500/10 text-slate-100"
-                  : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                  ? "bg-indigo-500/10 text-white"
+                  : "text-slate-200 hover:bg-slate-800 hover:text-white"
               } ${collapsed ? "justify-center" : ""}`}
             >
               <Icon

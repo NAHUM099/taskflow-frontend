@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createTask,
+  getTaskSummary,
   getTasks,
   updateTaskStatus,
 } from "@/lib/services/task-service";
 import type { CreateTaskRequest, TaskResponse } from "@/lib/types";
-import { makeTask } from "@/test/factories";
+import { makeTask, makeTaskPage, makeTaskSummary } from "@/test/factories";
 
 const { get, post, patch } = vi.hoisted(() => ({
   get: vi.fn(),
@@ -20,39 +21,99 @@ describe("getTasks", () => {
     get.mockReset();
   });
 
-  it("pide /tasks sin parámetros cuando no hay filtros", async () => {
-    const tasks = [makeTask()];
-    get.mockResolvedValue({ data: tasks });
+  it("pide la primera página cuando no hay parámetros", async () => {
+    const page = makeTaskPage();
+    get.mockResolvedValue({ data: page });
 
-    await expect(getTasks()).resolves.toEqual(tasks);
-    expect(get).toHaveBeenCalledWith("/tasks", { params: {} });
+    await expect(getTasks()).resolves.toEqual(page);
+    expect(get).toHaveBeenCalledWith("/tasks", {
+      params: { page: 0, size: 10 },
+    });
+  });
+
+  it("envía la página y el tamaño solicitados", async () => {
+    get.mockResolvedValue({ data: makeTaskPage() });
+
+    await getTasks({ page: 2, size: 5 });
+
+    expect(get).toHaveBeenCalledWith("/tasks", {
+      params: { page: 2, size: 5 },
+    });
   });
 
   it("envía el filtro de estado", async () => {
-    get.mockResolvedValue({ data: [] });
+    get.mockResolvedValue({ data: makeTaskPage() });
 
     await getTasks({ status: "IN_PROGRESS" });
 
     expect(get).toHaveBeenCalledWith("/tasks", {
-      params: { status: "IN_PROGRESS" },
+      params: { page: 0, size: 10, status: "IN_PROGRESS" },
     });
   });
 
   it("envía userId incluso cuando vale 0", async () => {
-    get.mockResolvedValue({ data: [] });
+    get.mockResolvedValue({ data: makeTaskPage() });
 
     await getTasks({ userId: 0 });
 
-    expect(get).toHaveBeenCalledWith("/tasks", { params: { userId: 0 } });
+    expect(get).toHaveBeenCalledWith("/tasks", {
+      params: { page: 0, size: 10, userId: 0 },
+    });
   });
 
   it("combina estado y usuario", async () => {
-    get.mockResolvedValue({ data: [] });
+    get.mockResolvedValue({ data: makeTaskPage() });
 
     await getTasks({ status: "DONE", userId: 2 });
 
     expect(get).toHaveBeenCalledWith("/tasks", {
-      params: { status: "DONE", userId: 2 },
+      params: { page: 0, size: 10, status: "DONE", userId: 2 },
+    });
+  });
+
+  it("envía la búsqueda por nombre de tarea", async () => {
+    get.mockResolvedValue({ data: makeTaskPage() });
+
+    await getTasks({ search: "informe" });
+
+    expect(get).toHaveBeenCalledWith("/tasks", {
+      params: { page: 0, size: 10, search: "informe" },
+    });
+  });
+
+  it("recorta la búsqueda y omite los espacios en blanco", async () => {
+    get.mockResolvedValue({ data: makeTaskPage() });
+
+    await getTasks({ search: "  informe  " });
+    expect(get).toHaveBeenLastCalledWith("/tasks", {
+      params: { page: 0, size: 10, search: "informe" },
+    });
+
+    await getTasks({ search: "   " });
+    expect(get).toHaveBeenLastCalledWith("/tasks", {
+      params: { page: 0, size: 10 },
+    });
+  });
+
+  it("combina búsqueda, estado, usuario y paginación", async () => {
+    get.mockResolvedValue({ data: makeTaskPage() });
+
+    await getTasks({
+      status: "PENDING",
+      userId: 3,
+      search: "informe",
+      page: 1,
+      size: 20,
+    });
+
+    expect(get).toHaveBeenCalledWith("/tasks", {
+      params: {
+        page: 1,
+        size: 20,
+        status: "PENDING",
+        userId: 3,
+        search: "informe",
+      },
     });
   });
 
@@ -60,6 +121,20 @@ describe("getTasks", () => {
     get.mockRejectedValue(new Error("500"));
 
     await expect(getTasks()).rejects.toThrow("500");
+  });
+});
+
+describe("getTaskSummary", () => {
+  beforeEach(() => {
+    get.mockReset();
+  });
+
+  it("pide /tasks/summary y devuelve los conteos", async () => {
+    const summary = makeTaskSummary({ total: 7, pending: 3 });
+    get.mockResolvedValue({ data: summary });
+
+    await expect(getTaskSummary()).resolves.toEqual(summary);
+    expect(get).toHaveBeenCalledWith("/tasks/summary");
   });
 });
 

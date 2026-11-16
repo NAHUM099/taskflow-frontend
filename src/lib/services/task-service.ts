@@ -2,23 +2,37 @@ import { api } from "@/lib/api";
 import type {
   CreateTaskRequest,
   StatusRequest,
-  TaskFilters,
+  TaskListParams,
+  TaskPageResponse,
   TaskResponse,
   TaskStatus,
+  TaskSummaryResponse,
 } from "@/lib/types";
 
 export async function getTasks(
-  filters: TaskFilters = {},
-): Promise<TaskResponse[]> {
-  const params: Record<string, string | number> = {};
-  if (filters.status) {
-    params.status = filters.status;
+  params: TaskListParams = {},
+): Promise<TaskPageResponse> {
+  const query: Record<string, string | number> = {
+    page: params.page ?? 0,
+    size: params.size ?? 10,
+  };
+  if (params.status) {
+    query.status = params.status;
   }
-  if (filters.userId !== undefined) {
-    params.userId = filters.userId;
+  if (params.userId !== undefined) {
+    query.userId = params.userId;
+  }
+  const search = params.search?.trim();
+  if (search) {
+    query.search = search;
   }
 
-  const { data } = await api.get<TaskResponse[]>("/tasks", { params });
+  const { data } = await api.get<TaskPageResponse>("/tasks", { params: query });
+  return data;
+}
+
+export async function getTaskSummary(): Promise<TaskSummaryResponse> {
+  const { data } = await api.get<TaskSummaryResponse>("/tasks/summary");
   return data;
 }
 

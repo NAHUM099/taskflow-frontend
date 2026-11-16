@@ -36,7 +36,7 @@ describe("TaskList", () => {
     );
 
     expect(
-      screen.getByText("No hay tareas con este estado."),
+      screen.getByText("No hay tareas que coincidan con los filtros."),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Crear primera tarea" }),
