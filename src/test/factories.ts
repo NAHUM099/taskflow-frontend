@@ -1,6 +1,8 @@
 import type { JwtPayload } from "@/lib/auth/types";
 import type {
+  TaskPageResponse,
   TaskResponse,
+  TaskSummaryResponse,
   UserPageResponse,
   UserResponse,
 } from "@/lib/types";
@@ -14,6 +16,39 @@ export function makeTask(overrides: Partial<TaskResponse> = {}): TaskResponse {
     userId: 2,
     userName: "Ana Torres",
     createdAt: "2026-10-11T10:00:00",
+    ...overrides,
+  };
+}
+
+export function makeTaskPage(
+  overrides: Partial<TaskPageResponse> = {},
+): TaskPageResponse {
+  const content = overrides.content ?? [makeTask()];
+  const totalPages = overrides.totalPages ?? (content.length === 0 ? 0 : 1);
+
+  return {
+    content,
+    totalElements: content.length,
+    totalPages,
+    number: 0,
+    size: 10,
+    last: totalPages <= 1,
+    first: true,
+    numberOfElements: content.length,
+    empty: content.length === 0,
+    ...overrides,
+  };
+}
+
+export function makeTaskSummary(
+  overrides: Partial<TaskSummaryResponse> = {},
+): TaskSummaryResponse {
+  return {
+    total: 3,
+    pending: 2,
+    inProgress: 1,
+    done: 0,
+    cancelled: 0,
     ...overrides,
   };
 }

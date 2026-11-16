@@ -84,7 +84,7 @@ src/
 | --- | --- | --- | --- |
 | `/login` | `src/app/login/page.tsx` | inverso: si hay sesión redirige a `/` | Formulario de login |
 | `/` | `src/app/(dashboard)/page.tsx` | `RequireAuth` | KPIs + 5 tareas recientes |
-| `/tasks` | `src/app/(dashboard)/tasks/page.tsx` | `RequireAuth` | Filtro, listado, alta (ADMIN) y cambio de estado |
+| `/tasks` | `src/app/(dashboard)/tasks/page.tsx` | `RequireAuth` | Búsqueda, filtro, listado paginado, alta (ADMIN) y cambio de estado |
 | `/users` | `src/app/(dashboard)/users/page.tsx` | `RequireAuth` + `RequireAdmin` | Búsqueda, paginación, edición, contraseña y activación de usuarios |
 
 No existen: `middleware.ts`, `error.tsx`, `global-error.tsx`, `not-found.tsx`, `loading.tsx`, Route
@@ -143,7 +143,8 @@ Reglas obligatorias de la capa de datos:
    `toast.success/error` de Sonner.
 
 **Providers** (`src/app/layout.tsx`): `AuthProvider` (sesión) envolviendo `QueryProvider` (React Query);
-`<Toaster />` de Sonner se monta una sola vez en el root.
+`<Toaster />` de Sonner se monta una sola vez en el root. Dentro de `QueryProvider` se renderiza
+`SessionCacheReset`, que vacía la caché cuando cambia la identidad de la sesión.
 
 ---
 
@@ -166,6 +167,12 @@ Detalles de la sesión:
   `isAuthenticated = user !== null`.
 - `QueryProvider` crea un único `QueryClient` con `retry: 1`, `refetchOnWindowFocus: false`,
   `staleTime: 30_000`.
+- `SessionCacheReset` (`components/providers/SessionCacheReset.tsx`) observa `useAuth().user.email` y
+  llama a `queryClient.clear()` cuando la identidad cambia (login con otra cuenta, logout, `401` o
+  cambio desde otra pestaña). Las claves de consulta no incluyen al usuario, así que sin este guard la
+  caché de la sesión anterior seguiría sirviendo datos durante `staleTime`. En el primer montaje no
+  limpia nada: usa un `ref` con centinela `undefined` para distinguir "nunca hubo sesión" de "se cerró
+  la sesión" (`null`).
 
 ---
 
@@ -178,7 +185,9 @@ Detalles de la sesión:
   - `RequireAdmin`: sin `ROLE_ADMIN` → `router.replace("/")`.
   - El menú lateral filtra opciones por rol con `getVisibleNavItems(role)` (`lib/navigation.ts`).
 - **La autorización real vive en el backend**; los guards son solo UX. Nunca asumir que ocultar UI
-  protege un endpoint.
+  protege un endpoint. En particular, `GET /tasks`, `GET /tasks/summary` y `PATCH /tasks/{id}/status`
+  aplican el alcance por rol en `TaskService` a partir del email del JWT: un `ROLE_USER` solo ve y mueve
+  sus tareas (ver [api-contracts.md](./api-contracts.md)). El frontend no filtra por usuario.
 - Roles: `ROLE_USER`, `ROLE_MODERATOR`, `ROLE_ADMIN`; etiquetas y helpers en `lib/auth/types.ts`
   (`ROLE_LABELS`). Comparar contra el rol técnico, nunca contra el texto traducido.
 
@@ -220,10 +229,10 @@ respuesta → "No pudimos conectar con el servidor."
   `TaskStatusMenu`, `UsersContent`, `EditUserModal`, `CreateUserModal`, `UpdateUserPasswordModal`,
   `UpdateUserStatusModal`.
 - El resto de componentes (`TaskCard`, `TaskList`, `TasksHeader`, `TaskFilters`, `TaskStatusBadge`,
-  `TaskRow`, `RecentTasks`, `DashboardStats`, `UserCard`, `UserList`, `UsersHeader`, `UserPagination`) son
-  **componentes cliente por transitividad**: no llevan la directiva porque siempre se importan desde un
-  archivo que sí la declara. Si alguno se importara desde un Server Component, habría que añadirle
-  `"use client"`.
+  `TaskRow`, `RecentTasks`, `DashboardStats`, `UserCard`, `UserList`, `UsersHeader`, `UserPagination`,
+  `SessionCacheReset`) son **componentes cliente por transitividad**: no llevan la directiva porque
+  siempre se importan desde un archivo que sí la declara. Si alguno se importara desde un Server
+  Component, habría que añadirle `"use client"`.
 - Las `page.tsx`, `layout.tsx` y `lib/**` no llevan `"use client"`.
 - Patrón de composición: el `*Content` es el único que llama hooks de datos; los hijos reciben props
   explícitas tipadas y no acceden a React Query (excepciones actuales: `RecentTasks` y `TaskStatusMenu`,

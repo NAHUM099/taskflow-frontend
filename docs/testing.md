@@ -1,6 +1,6 @@
 # Testing — TaskFlow Frontend
 
-> Estado **actual** verificado el **2026-10-11**. Punto de entrada: [../CLAUDE.md](../CLAUDE.md).
+> Estado **actual** verificado el **2026-11-13**. Punto de entrada: [../CLAUDE.md](../CLAUDE.md).
 > Arquitectura bajo prueba: [architecture.md](./architecture.md). Deuda pendiente: [technical-debt.md](./technical-debt.md).
 
 ---
@@ -52,6 +52,7 @@ src/
 ├─ hooks/queries/useTasks.test.tsx
 ├─ context/AuthContext.test.tsx
 ├─ components/
+│  ├─ providers/SessionCacheReset.test.tsx
 │  ├─ tasks/TaskCard.test.tsx
 │  ├─ dashboard/DashboardContent.test.tsx
 │  └─ layout/
@@ -59,7 +60,7 @@ src/
 │     └─ DashboardShell.test.tsx
 └─ test/                      # utilidades + flujos de integración
    ├─ render.tsx              # renderWithProviders / createTestQueryClient
-   ├─ factories.ts            # makeTask / makeUser / makeUserPage / makeJwt
+   ├─ factories.ts            # makeTask / makeTaskPage / makeTaskSummary / makeUser / makeUserPage / makeJwt
    ├─ axios.ts                # responseError / networkError / stubApiStatus
    ├─ navigation.ts           # routerMock + navigationMock + setPathname
    └─ flows/auth-flow.test.tsx  # token → API 401 → guard (única excepción a la colocalización)
@@ -129,19 +130,21 @@ Umbrales configurados en `vitest.config.mts` (el comando de cobertura falla si n
 
 Exclusiones: `src/app/**` (archivos de ruta de 1–2 líneas), `src/test/**`, `*.test.*`, `src/lib/types.ts`
 (solo interfaces), `*.d.ts` y `src/components/providers/QueryProvider.tsx` (solo configura `staleTime`/`retry`:
-probar el cliente de React Query no da señal sobre nuestro código).
+probar el cliente de React Query no da señal sobre nuestro código). La lógica de sesión que vive dentro de
+ese provider está extraída en `SessionCacheReset.tsx`, que **sí** se testea.
 
-Cobertura real al cierre (238 tests, 40 archivos):
+Cobertura real al cierre (258 tests, 43 archivos):
 
 | Área | Líneas | Ramas |
 | --- | --- | --- |
 | `src/lib` (incluye `auth` y `services`) | 100 % | 100 % |
 | `src/hooks` | 100 % | 100 % |
-| `src/context` | 96 % (`AuthContext` sin cubrir la rama SSR) | 96 % |
+| `src/context` | 96 % (`AuthContext` sin cubrir la rama SSR) | 100 % |
 | `src/components/auth` | 100 % | 100 % |
-| `src/components/dashboard` | 100 % | 90 % (fallback `id ?? title` en `RecentTasks`) |
+| `src/components/dashboard` | 100 % | 88 % (fallback `id ?? title` en `RecentTasks`) |
 | `src/components/layout` | 98 % | 97 % (`Mi perfil` y el `id` del enlace) |
-| `src/components/tasks` | 98 % | 94 % |
+| `src/components/providers` | 100 % | 100 % (`SessionCacheReset`) |
+| `src/components/tasks` | 98 % | 93 % |
 | `src/components/users` | 97 % | 98 % |
 | **Global** | **98 %** | **97 %** |
 

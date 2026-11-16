@@ -156,7 +156,7 @@ Los iconos de KPI usan `text-cyan-300`, `text-amber-300`, `text-emerald-300` y `
 | Estado de error | `DashboardContent`, `TasksContent`, `UsersContent` | mismo contenedor que el vacío pero con `justify-center gap-5` + `CircleAlert size-8 text-slate-500` + botón "Reintentar" con `RotateCw size-4` |
 | Skeleton | los tres `*Content` | `animate-pulse rounded-xl`/`rounded-2xl border border-slate-700/60 bg-slate-800/60` |
 | Spinner | `RequireAuth`, `TaskStatusMenu` | `size-5 animate-spin rounded-full border-2 border-slate-700 border-t-indigo-500` |
-| Paginación | `UserPagination` | botones secundarios `h-9` + texto `text-sm text-slate-400` ("Página X de Y") + `ChevronLeft/Right` |
+| Paginación | `UserPagination`, `TaskPagination` | botones secundarios `h-9` + texto `text-sm text-slate-400` ("Página X de Y") + `ChevronLeft/Right` |
 
 No existen hoy: `<table>` real, `<dialog>` nativo, tabs, acordeón, tooltips de iconos (solo el texto
 flotante del sidebar colapsado), ni botones destructivos.
@@ -173,8 +173,9 @@ flotante del sidebar colapsado), ni botones destructivos.
   sobre overlay `fixed inset-0 z-40 bg-slate-950/60`; cierra con `Escape`, con el botón `X` y con clic en
   el overlay; ambos llevan `inert` cuando están cerrados.
 - **Header**: `sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-700/60 bg-slate-900/80 px-4 backdrop-blur-sm sm:px-6`.
-- **Ítem de navegación**: activo `bg-indigo-500/10 text-slate-100` con icono `text-indigo-400`; inactivo
-  `text-slate-400 hover:bg-slate-800 hover:text-slate-200`. Colapsado muestra solo icono + etiqueta
+- **Ítem de navegación**: activo `bg-indigo-500/10 text-white` con icono `text-indigo-400`; inactivo
+  `text-slate-200 hover:bg-slate-800 hover:text-white`. El color se declara en el `<Link>` (nunca se hereda
+  del contenedor) y la etiqueta lo hereda de él. Colapsado muestra solo icono + etiqueta
   flotante (`pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 rounded-md border border-slate-700 bg-slate-800 px-2 py-1 text-xs font-medium shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150`).
 - `src/lib/navigation.ts` es la **única fuente de navegación**: `navItems` (label, href, icono, roles
   visibles), `getVisibleNavItems(role)`, `isActivePath()`, `getSectionTitle()`.
