@@ -133,7 +133,7 @@ Exclusiones: `src/app/**` (archivos de ruta de 1–2 líneas), `src/test/**`, `*
 probar el cliente de React Query no da señal sobre nuestro código). La lógica de sesión que vive dentro de
 ese provider está extraída en `SessionCacheReset.tsx`, que **sí** se testea.
 
-Cobertura real al cierre (258 tests, 43 archivos):
+Cobertura real al cierre (266 tests, 43 archivos):
 
 | Área | Líneas | Ramas |
 | --- | --- | --- |
@@ -144,9 +144,9 @@ Cobertura real al cierre (258 tests, 43 archivos):
 | `src/components/dashboard` | 100 % | 88 % (fallback `id ?? title` en `RecentTasks`) |
 | `src/components/layout` | 98 % | 97 % (`Mi perfil` y el `id` del enlace) |
 | `src/components/providers` | 100 % | 100 % (`SessionCacheReset`) |
-| `src/components/tasks` | 98 % | 93 % |
+| `src/components/tasks` | 99 % | 94 % |
 | `src/components/users` | 97 % | 98 % |
-| **Global** | **98 %** | **97 %** |
+| **Global** | **99 %** | **97 %** |
 
 Líneas que quedan sin cubrir a propósito (no son huecos accidentales):
 
