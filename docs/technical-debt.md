@@ -12,9 +12,9 @@
 1. **No existe `components/ui/`.** Botones, inputs, labels, badges, skeletons, bloques de error/vacío y
    cabeceras de "tabla" están repetidos en `Dashboard*`, `Tasks*` y `Users*`. Riesgo real: divergencia
    visual al tocar un solo sitio.
-2. **Sin pruebas E2E ni a11y automatizada**: la suite unitaria/integración (258 tests, 43 archivos) cubre
+2. **Sin pruebas E2E ni a11y automatizada**: la suite unitaria/integración (266 tests, 43 archivos) cubre
    `lib` (100 %), hooks (100 %), `AuthContext`, `components/*` y el flujo `401`/logout de punta a punta con
-   jsdom, con 98 % de líneas globales (ver [testing.md](./testing.md)). Falta Playwright, `vitest-axe` y
+   jsdom, con 99 % de líneas globales (ver [testing.md](./testing.md)). Falta Playwright, `vitest-axe` y
    cualquier verificación contra el backend real. El CI ya ejecuta `npm run lint` y `npm run test:ci` antes
    del build.
 3. **Sin `error.tsx`, `not-found.tsx` ni `loading.tsx`**: un error de render cae en la pantalla por
@@ -81,6 +81,10 @@
     se desactive a sí mismo; perdería el acceso al instante, porque `TaskFlowUserDetails.isEnabled()`
     devuelve `active` en cada petición autenticada. La UI lo advierte en `UpdateUserStatusModal` pero no
     bloquea la fila: si se quiere impedir, debe aplicarse en el backend.
+24. **Combo de responsables limitado a 100 usuarios**: `CreateTaskModal` pide `GET /users?page=0&size=100`
+    y filtra por nombre en cliente (respuesta instantánea). Si el equipo supera los 100 usuarios, el resto
+    no aparece en la lista; la salida es usar el parámetro `search` del backend con debounce, como hace
+    `UsersContent`.
 
 ---
 

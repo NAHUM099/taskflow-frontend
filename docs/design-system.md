@@ -140,8 +140,9 @@ Los iconos de KPI usan `text-cyan-300`, `text-amber-300`, `text-emerald-300` y `
 | Botón-icono | cerrar modal, editar usuario, actualizar contraseña, activar/inactivar usuario, hamburguesa | `flex size-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-700/60 hover:text-slate-200 focus-visible:ring-2 focus-visible:ring-indigo-500` |
 | Botón destructivo suave | confirmar inactivación en `UpdateUserStatusModal` | `inline-flex h-10 items-center justify-center rounded-lg border border-red-500/30 bg-red-500/10 px-4 text-sm font-medium text-red-300 transition-colors hover:bg-red-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-60` |
 | Input de texto | login, título de tarea, nombre/email | `h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 placeholder:text-slate-500 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40` |
-| Input de búsqueda | `/users` | estilo de input + `pl-10 pr-3` con icono `Search` absoluto en `left-3` |
-| Select | modales (`h-11`) y filtro de tareas (`h-10`) | mismo estilo que el input (la diferencia de altura es una inconsistencia existente) |
+| Input de búsqueda | `/users`, buscador de responsable en `CreateTaskModal` | estilo de input + `pl-10 pr-3` con icono `Search` absoluto en `left-3` |
+| Select | filtro de tareas (`h-10`) | mismo estilo que el input (la diferencia de altura es una inconsistencia existente) |
+| Combo con búsqueda | responsable en `CreateTaskModal` | input de búsqueda (`h-11`) que muestra el **nombre asignado** cuando no se escribe (con `Check` a la derecha) y el texto de búsqueda mientras se teclea + listbox `absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 p-1 shadow-xl`; opciones `role="option"` con `bg-indigo-500/10` (seleccionada) y `bg-slate-700/60` (activa por teclado) |
 | Textarea | descripción de tarea | `w-full resize-none rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm …` + `rows={4}` |
 | Label | todos los formularios | `text-sm font-medium text-slate-300` |
 | Error de campo | formularios | `text-xs text-red-300` |
@@ -203,7 +204,7 @@ flotante del sidebar colapsado), ni botones destructivos.
 | Hover | Superficies suben un nivel (`bg-slate-800/60 → bg-slate-800`, `hover:bg-slate-700/60`); acento `indigo-600 → indigo-500`; iconos `text-slate-400 → text-slate-200` |
 | Focus | `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500` (`indigo-400` en botones de acento); inputs `focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40` |
 | Active / selected | No hay estilos `active:` ni `aria-pressed`; la selección se expresa con `bg-indigo-500/10` (nav) o color de estado (badge) |
-| Disabled | `disabled:cursor-not-allowed disabled:opacity-60` en los submits (login, `CreateTaskModal`, `EditUserModal`, `CreateUserModal`, `UpdateUserPasswordModal`, `UpdateUserStatusModal`) y en el `<select>` de usuarios de `CreateTaskModal` mientras carga; `disabled:opacity-60` en el badge de `TaskStatusMenu` mientras actualiza; `disabled:cursor-not-allowed disabled:opacity-50` en `UserPagination` (`disabled={first \|\| isFetching}`) |
+| Disabled | `disabled:cursor-not-allowed disabled:opacity-60` en los submits (login, `CreateTaskModal`, `EditUserModal`, `CreateUserModal`, `UpdateUserPasswordModal`, `UpdateUserStatusModal`) y en el buscador de responsables de `CreateTaskModal` mientras carga; `disabled:opacity-60` en el badge de `TaskStatusMenu` mientras actualiza; `disabled:cursor-not-allowed disabled:opacity-50` en `UserPagination` (`disabled={first \|\| isFetching}`) |
 | Loading | Spinner + `animate-pulse` + textos explícitos: "Iniciando sesión…", "Cargando tareas…", "Creando…", "Guardando…" |
 
 ---
