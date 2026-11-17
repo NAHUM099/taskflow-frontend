@@ -18,7 +18,7 @@
 | `GET` | `/users?page&size&search` | `getUsers()` (`src/lib/services/user-service.ts`) | `useUsers` → `UsersContent`, `CreateTaskModal` | Solo `ROLE_ADMIN` |
 | `PATCH` | `/users/{id}` | `updateUser()` | `useUpdateUser` → `EditUserModal` | Body `{ name, email }`; solo `ROLE_ADMIN` |
 | `PATCH` | `/users/{id}/status` | `updateUserStatus()` | `useUpdateUserStatus` → `UpdateUserStatusModal` | Body `{ active: boolean }`; responde el `UserResponse` actualizado; solo `ROLE_ADMIN` |
-| `PATCH` | `/users/{id}/password` | `updateUserPassword()` | `useUpdateUserPassword` → `UpdateUserPasswordModal` | Body `{ newPassword }` (mín. 6), responde `204 No Content`; solo `ROLE_ADMIN`. **Requiere el backend del PR #1 (`feature/admin-update-user-password`), pendiente de fusión en `main`** |
+| `PATCH` | `/users/{id}/password` | `updateUserPassword()` | `useUpdateUserPassword` → `UpdateUserPasswordModal` | Body `{ newPassword }` (mín. 6), responde `204 No Content`; solo `ROLE_ADMIN`. **Implementado en `UserController` e integrado en `main` (PR #1 fusionado)** |
 | `POST` | `/users` | `createUser()` | `useCreateUser` → `CreateUserModal` | **Solo `ROLE_ADMIN`**: el registro público está deshabilitado. Body `{ name, email, password }` (mín. 6); rol forzado a `USER` |
 
 ---

@@ -1,157 +1,309 @@
 # TaskFlow
 
-Aplicación full-stack de gestión de tareas y usuarios. Incluye autenticación JWT, un dashboard con métricas, un módulo de tareas con búsqueda, paginación y control de estados, y un módulo de administración de usuarios con búsqueda y paginación.
+**Gestión de tareas con roles y administración de usuarios.**
+Interfaz en Next.js (App Router) + TypeScript sobre una API REST en Kotlin/Spring Boot y PostgreSQL.
 
-## Características
+| | |
+| --- | --- |
+| **Demo en vivo** | https://taskflow-frontend-ashen.vercel.app |
+| **API desplegada** | https://taskflow-api-ycus.onrender.com |
+| **Repositorio del backend** | https://github.com/NAHUM099/taskflow-api |
+| **Documentación técnica** | [docs/](docs/) |
 
-- Autenticación con JWT (login/logout y protección de rutas).
-- Dashboard con KPIs (total, pendientes, en progreso, completadas) y las 5 tareas más recientes.
-- Gestión de tareas: listado paginado, búsqueda por nombre, filtro por estado, creación y cambio de estado con transiciones válidas.
-- Gestión de usuarios (solo `ADMIN`): listado paginado, búsqueda por nombre/email, alta, edición de
-  nombre/email, restablecimiento de contraseña y activación/inactivación de cuentas.
-- Roles: `USER`, `MODERATOR`, `ADMIN`.
-- Manejo de errores con mensajes amigables (400/401/403/404/409/500/network).
-- Estados de UI: loading (skeletons), error (con reintento) y empty state.
-- UI responsive, accesible y con tema Dark Slate.
+![Dashboard de TaskFlow](public/screenshots/dashboard.png)
+
+## Acceso a la demo
+
+La aplicación está desplegada en **https://taskflow-frontend-ashen.vercel.app**.
+
+TaskFlow **no tiene registro público**: las cuentas las crea un administrador (`POST /users` exige
+`ROLE_ADMIN`). Por ese motivo la demo todavía **no publica credenciales de prueba**: habilitarlas
+implica crear la cuenta en la base de datos de producción, una acción manual que queda fuera de esta
+etapa de documentación.
+
+- Reglas y procedimiento para habilitar una cuenta de demostración (`USER`, datos ficticios, sin
+  privilegios de administración): `docs/cuenta-demo.md` del backend, enlazado desde
+  [su documentación](https://github.com/NAHUM099/taskflow-api#documentación).
+- Mientras tanto, el proyecto completo se levanta en local en menos de cinco minutos con las
+  [instrucciones de instalación](#ejecución-local).
+
+> Nunca se publican credenciales de administración ni secretos de producción.
+
+## Capturas
+
+| Dashboard | Tareas |
+| --- | --- |
+| ![Dashboard](public/screenshots/dashboard.png) | ![Gestión de tareas](public/screenshots/tasks.png) |
+
+| Login | Usuarios (solo `ADMIN`) |
+| --- | --- |
+| ![Inicio de sesión](public/screenshots/login.png) | ![Administración de usuarios](public/screenshots/users.png) |
+
+Capturas de la aplicación en funcionamiento, con datos de ejemplo ficticios.
+
+## Qué es TaskFlow
+
+Coordinar tareas en un equipo pequeño suele acabar en una hoja de cálculo compartida o en un tablero
+sin permisos: cualquiera ve todo y cualquiera puede romperlo. TaskFlow resuelve ese problema con un
+flujo completo y deliberadamente pequeño:
+
+- **Cada persona gestiona lo suyo**: un `USER` ve y mueve solo sus tareas.
+- **Los moderadores coordinan**: `MODERATOR` puede crear tareas para cualquier persona a través de la
+  API (la interfaz todavía limita el alta a `ADMIN`).
+- **Un administrador controla las cuentas**: `ADMIN` es el único que crea usuarios, cambia
+  contraseñas o desactiva accesos.
+
+El propósito del proyecto es demostrar un producto real de punta a punta —autenticación,
+autorización por roles, validación, paginación, estados de carga y error, pruebas automatizadas,
+despliegue y documentación— sin la complejidad de una plataforma de gestión de proyectos.
+
+## Funcionalidades
+
+**Autenticación y sesión**
+
+- Inicio de sesión con JWT y cierre de sesión; rutas protegidas con redirección a `/login`.
+- Sesión persistente entre pestañas y mensajes de error claros en el formulario.
+- Tratamiento específico del *rate limiting* del login (`429` + `Retry-After`).
+
+**Dashboard**
+
+- Indicadores de tareas (total, pendientes, en progreso, completadas) y listado de tareas recientes.
+- Vista adaptada al rol: un `USER` solo ve sus propias cifras y tareas.
+
+**Tareas**
+
+- Listado paginado con búsqueda por título y filtro por estado.
+- Cambio de estado con las transiciones permitidas por el backend (`PENDING`, `IN_PROGRESS`,
+  `DONE`, `CANCELLED`).
+- Alta de tareas desde la interfaz para `ADMIN`. La API también autoriza a `MODERATOR`, pero la UI todavía
+  no le muestra el botón (ver [deuda técnica](docs/technical-debt.md)).
+
+**Usuarios** (solo `ADMIN`)
+
+- Listado paginado con búsqueda por nombre o correo.
+- Alta, edición, restablecimiento de contraseña y activación/desactivación de cuentas.
+
+**Experiencia de uso**
+
+- Tema oscuro responsive, navegación lateral según el rol y tablas adaptables a móvil.
+- Estados de carga (*skeletons*), estados vacíos y errores con opción de reintentar.
+- Etiquetas de formulario asociadas, atributos ARIA en menús y diálogos y avisos anunciados por
+  lectores de pantalla.
 
 ## Stack
 
-### Frontend
+| Capa | Tecnología |
+| --- | --- |
+| Framework | Next.js 16.4 (App Router) · React 19 |
+| Lenguaje | TypeScript 5 |
+| Estilos | Tailwind CSS 4 |
+| Datos y estado del servidor | TanStack Query 5 · Axios |
+| UI | lucide-react · sonner (notificaciones) |
+| Pruebas | Vitest 5 · Testing Library · jsdom |
+| Backend (repositorio aparte) | Kotlin 1.9 · Spring Boot 3.5 · PostgreSQL · Flyway · JWT |
 
-- Next.js 16 (App Router)
-- React 19
-- TypeScript
-- Tailwind CSS 4
-- Axios
-- TanStack React Query v5
-- Sonner (toasts)
-- lucide-react (iconos)
-
-### Backend
-
-- Kotlin
-- Spring Boot 3.5
-- Spring Security
-- JWT (jjwt)
-- JPA / Hibernate
-- PostgreSQL
+Detalle de dependencias y versiones: [`package.json`](package.json).
 
 ## Arquitectura
 
-```text
-Frontend (Next.js)
-    │  Components → Hooks → Services → Axios
-    ▼
-REST API (Spring Boot)
-    │  Controller → Service → Repository
-    ▼
-PostgreSQL
+```
+Páginas (App Router)  src/app
+        │  login + grupo (dashboard) protegido por <RequireAuth>
+        ▼
+Componentes  src/components          Hooks de datos  src/hooks
+   auth · dashboard · layout             queries/ · mutations/
+   tasks · users · providers                   │  React Query
+        │                                      ▼
+        └──────────►  Servicios por dominio  src/lib/services
+                                     │
+                                     ▼
+                 Cliente HTTP (Axios + interceptores)  src/lib/api.ts
+                                     │  Authorization: Bearer <JWT>
+                                     ▼
+                          API REST (taskflow-api)
 ```
 
-En el frontend la comunicación HTTP está centralizada en una única instancia de Axios (`src/lib/api.ts`), con servicios por dominio (`task-service`, `user-service`) y hooks de React Query (`queries` / `mutations`).
+- **`src/app`**: rutas `/login`, `/` (dashboard), `/tasks` y `/users`. El grupo `(dashboard)` envuelve
+  las páginas privadas con `<RequireAuth>`, y `/users` añade `<RequireAdmin>`.
+- **`src/components`**: UI por dominio (`auth`, `dashboard`, `layout`, `tasks`, `users`) y los
+  proveedores de React Query (`providers/`).
+- **`src/hooks`**: consultas (`queries/`) y mutaciones (`mutations/`) de React Query, una por caso de
+  uso, con invalidación de caché tras cada cambio.
+- **`src/lib/services`**: llamadas a la API por dominio (`task-service`, `user-service`).
+- **`src/lib`**: cliente Axios, normalización de errores, claves de caché, utilidades de estado de
+  tarea y tipos compartidos.
+- **`src/lib/auth` + `src/context/AuthContext`**: sesión, decodificación del JWT y cierre de sesión
+  automático cuando la API responde `401`.
 
-## Seguridad
+Los detalles (decisiones, flujo de datos y límites entre capas) están en
+[docs/architecture.md](docs/architecture.md).
 
-- Login contra `POST /auth/login`, que devuelve un JWT (`sub` = email, claim `role`, expiración de 1 hora).
-- El token se guarda en `localStorage` de forma encapsulada (`src/lib/auth/token.ts`).
-- Axios añade `Authorization: Bearer <token>` mediante un interceptor.
-- `401` → se limpia la sesión y se redirige a `/login`.
-- `403` → no se cierra la sesión; se muestra el error de autorización.
-- `429` en el login → se muestra el tiempo de espera indicado por `Retry-After` (rate limiting del backend por IP y por cuenta).
-- Autorización por rol en backend: `/users/**` requiere `ROLE_ADMIN`, incluido `POST /users` (el registro público está deshabilitado). `POST /auth/login` es el único endpoint público.
-- Alcance de tareas por rol: en `GET /tasks`, `GET /tasks/summary` y `PATCH /tasks/{id}/status` un
-  `ROLE_USER` solo ve y mueve sus propias tareas (el backend ignora cualquier `userId` de la URL);
-  `ROLE_MODERATOR` y `ROLE_ADMIN` ven todas.
-
-## Instalación
+## Ejecución local
 
 ### Requisitos
 
-- Node.js 20+ y npm.
-- JDK 21.
-- PostgreSQL corriendo (por defecto el backend usa `localhost:5434`).
+| Herramienta | Versión | Comprobación |
+| --- | --- | --- |
+| Node.js | 20.9 o superior (probado con 24 LTS) | `node -v` |
+| npm | 10 o superior (probado con 11) | `npm -v` |
+| JDK | 21 (lo exige el backend) | `java -version` |
+| PostgreSQL | 14 o superior (probado con 18) | `psql --version` |
 
-### Backend
+### 1. Clonar los dos repositorios
+
+```powershell
+git clone https://github.com/NAHUM099/taskflow-api.git
+git clone https://github.com/NAHUM099/taskflow-frontend.git
+```
 
 ```bash
-cd taskflow-api/taskflow-api
-# Windows: gradlew.bat bootRun
+# Linux / macOS
+git clone https://github.com/NAHUM099/taskflow-api.git
+git clone https://github.com/NAHUM099/taskflow-frontend.git
+```
+
+Deja los dos proyectos en el mismo directorio padre: las rutas de los comandos siguientes parten de
+ahí.
+
+### 2. Base de datos y backend
+
+```sql
+-- Crear la base de datos (con psql o pgAdmin)
+CREATE DATABASE taskflow;
+```
+
+```powershell
+cd taskflow-api
+$env:DB_USERNAME = "postgres"
+$env:DB_PASSWORD = "tu-contrasena"
+$env:JWT_SECRET  = "cadena-larga-y-aleatoria-de-al-menos-32-caracteres"
+$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5434/taskflow"
+.\gradlew.bat bootRun
+```
+
+```bash
+# Linux / macOS
+createdb taskflow
+cd taskflow-api
+export DB_USERNAME="postgres" DB_PASSWORD="tu-contrasena"
+export JWT_SECRET="cadena-larga-y-aleatoria-de-al-menos-32-caracteres"
+export SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5434/taskflow"
 ./gradlew bootRun
 ```
 
-### Frontend
+Flyway crea el esquema al arrancar y la API queda en `http://localhost:8080`. El detalle completo
+—requisitos, variables y cómo crear el primer usuario administrador de una base vacía— está en el
+[README del backend](https://github.com/NAHUM099/taskflow-api#ejecución-local) y en
+[`docs/cuenta-demo.md`](https://github.com/NAHUM099/taskflow-api#documentación).
 
-```bash
-cd taskflow-frontend
+### 3. Frontend
+
+```powershell
+cd ..\taskflow-frontend
 npm install
+Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Abre `http://localhost:3000`.
+```bash
+# Linux / macOS
+cd ../taskflow-frontend
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+Abre **http://localhost:3000** e inicia sesión con un usuario creado en el backend.
+
+> Si prefieres no levantar el backend, apunta `NEXT_PUBLIC_API_URL` a la API desplegada
+> (`https://taskflow-api-ycus.onrender.com`): CORS ya permite `http://localhost:3000`. La primera
+> petición puede tardar ~1 minuto porque Render suspende la instancia por inactividad.
+
+### 4. Compilar para producción
+
+```bash
+npm run build
+npm run start        # sirve el build en http://localhost:3000
+```
+
+`NEXT_PUBLIC_API_URL` se inyecta en tiempo de compilación: si cambia, hay que volver a ejecutar
+`npm run build`.
 
 ## Variables de entorno
 
-No incluyas valores reales (especialmente secretos) en el repositorio.
+Plantilla lista para copiar: [`.env.example`](.env.example).
 
-Backend (`application.yaml`):
+| Variable | Obligatoria | Descripción | Ejemplo |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_API_URL` | Sí | URL base del backend. Se inyecta en el build | `http://localhost:8080` |
 
-- `DB_USERNAME`
-- `DB_PASSWORD`
-- `JWT_SECRET`
+Notas:
 
-Frontend (`.env.local`, ignorado por git):
+- `.env.local` está ignorado por git; `.env.example` sí se versiona como plantilla.
+- Todo lo que empieza por `NEXT_PUBLIC_` acaba en el bundle del navegador: **nunca** pongas secretos
+  ahí.
+- Las variables del backend (`DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, rate limiting...) están en
+  [`taskflow-api/.env.example`](https://github.com/NAHUM099/taskflow-api#variables-de-entorno).
 
-- `NEXT_PUBLIC_API_URL` (por ejemplo, `http://localhost:8080`)
+## Pruebas
 
-## Uso
+```bash
+npm run test            # suite completa (Vitest)
+npm run test:watch      # modo interactivo
+npm run test:coverage   # suite + cobertura con umbrales
+npm run lint            # ESLint
+npm run build           # compilación de producción (valida tipos)
+```
 
-1. Inicia sesión en `/login` con un usuario válido.
-2. El Dashboard muestra las métricas y las 5 tareas recientes.
-3. En `/tasks` busca, filtra, pagina, crea y cambia el estado de las tareas. Un `ROLE_USER` solo ve las
-   suyas (lo impone el backend); `ADMIN` y `MODERATOR` ven todas.
-4. En `/users` (solo `ADMIN`) busca, pagina, edita usuarios, restablece su contraseña e inactiva o
-   reactiva cuentas.
+**Resultado actual: 275 tests en 43 archivos, todos en verde.**
+
+- Entorno `jsdom` con Testing Library y mocks de red por caso de prueba, sin backend real.
+- Umbrales de cobertura configurados en [`vitest.config.mts`](vitest.config.mts): 95 % de líneas y
+  sentencias, 90 % de funciones y ramas, y **100 %** en `src/hooks/**`.
+- Estrategia, convenciones y qué cubre cada bloque: [docs/testing.md](docs/testing.md).
+
+Resultados de las pruebas del backend: [taskflow-api](https://github.com/NAHUM099/taskflow-api#pruebas)
+(92 tests, 0 fallos).
 
 ## Estructura del proyecto
 
-```text
-taskflow-frontend/
-  src/
-    app/          # rutas (login, (dashboard), tasks, users)
-    components/   # layout, auth, dashboard, tasks, users, providers
-    context/      # AuthContext
-    hooks/        # queries y mutations
-    lib/          # api.ts, services, errors, types, query-keys, ...
+```
+src/
+├─ app/                 # rutas (App Router): login y grupo (dashboard)
+├─ components/          # UI por dominio: auth, dashboard, layout, providers, tasks, users
+├─ context/             # AuthContext (sesión y usuario actual)
+├─ hooks/               # React Query: queries/ y mutations/
+├─ lib/                 # api, errores, servicios, auth, tipos y utilidades
+└─ test/                # utilidades y dobles de prueba
+public/screenshots/     # capturas usadas en este README
+docs/                   # documentación técnica
 ```
 
-```text
-taskflow-api/taskflow-api/
-  src/main/kotlin/com/taskflow/api/
-    controller/   # endpoints REST
-    service/      # lógica de negocio
-    repository/   # acceso a datos (Spring Data)
-    entity/       # entidades JPA
-    dto/          # request/response
-    security/     # JWT y Spring Security
-    exception/    # manejo global de errores
-```
+## Documentación
 
-## Testing
+| Documento | Contenido |
+| --- | --- |
+| [docs/architecture.md](docs/architecture.md) | Arquitectura del frontend y flujo de datos |
+| [docs/api-contracts.md](docs/api-contracts.md) | Contratos de la API que consume el cliente |
+| [docs/design-system.md](docs/design-system.md) | Tokens, tipografía y componentes de UI |
+| [docs/testing.md](docs/testing.md) | Estrategia y convenciones de prueba |
+| [docs/technical-debt.md](docs/technical-debt.md) | Deuda técnica y limitaciones conocidas |
+| [taskflow-api](https://github.com/NAHUM099/taskflow-api#documentación) | Backend: seguridad, base de datos, errores y cuenta demo |
 
-- Backend: `./gradlew test` ejecuta `TaskflowApiApplicationTests.contextLoads()` (`@SpringBootTest`, requiere PostgreSQL y las variables de entorno) y los unitarios de servicio con Mockito (p. ej. `TaskServiceTest`).
-- Frontend: Vitest + Testing Library (258 tests, 43 archivos) con umbrales de cobertura en `vitest.config.mts`. Comandos: `npm run test`, `npm run test:coverage`, `npm run test:ci`; para validación estática, `npm run lint` y `npx tsc --noEmit`. Detalle en [docs/testing.md](docs/testing.md).
+## Limitaciones conocidas
+
+- El token JWT se guarda en `localStorage` y no hay *refresh token*: al caducar, la sesión se cierra y
+  se redirige a `/login`. El detalle está en
+  [docs/technical-debt.md](docs/technical-debt.md).
+- La protección de rutas es de cliente (`<RequireAuth>` / `<RequireAdmin>`); la autorización real
+  siempre la impone la API.
+- CORS está limitado a `http://localhost:3000` y a la URL de producción: si sirves el frontend en
+  otro origen, las peticiones se bloquean hasta añadir el origen en el backend.
+- El registro público está deshabilitado por diseño: las cuentas las crea un administrador.
 
 ## Estado del proyecto
 
-MVP funcional: autenticación, dashboard, tareas y usuarios conectados al backend real.
-
-## Limitaciones conocidas / Mejoras futuras
-
-- El JWT se almacena en `localStorage`; una mejora futura es migrar a cookie `httpOnly` + protección server-side (proxy/DAL).
-- No hay refresh token (el backend no lo soporta).
-- El modal no implementa "focus trap" avanzado (solo cierre con Escape/overlay).
-- `POST /tasks` está limitado a `ADMIN`/`MODERATOR` en el backend, pero la UI solo ofrece el alta a
-  `ADMIN`; un `MODERATOR` recibiría `403` al abrir el modal porque este carga usuarios con `GET /users`
-  (ADMIN-only).
-- `GET /users` no devuelve `role` (`UserResponse` = id, name, email, active), por lo que la tabla de usuarios no muestra una columna de rol.
-
+Aplicación completa y funcional (MVP): autenticación, dashboard, gestión de tareas y administración
+de usuarios, con 275 pruebas automatizadas y despliegue en producción. Pendiente para una etapa
+posterior: `Docker Compose` para levantar todo el entorno y la publicación de una cuenta de
+demostración.
