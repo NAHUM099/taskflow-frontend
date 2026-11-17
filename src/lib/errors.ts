@@ -37,6 +37,11 @@ export function getApiErrorMessage(
       return message ?? "No encontramos el recurso solicitado.";
     case 409:
       return message ?? "Esta operación entra en conflicto con el estado actual.";
+    case 429:
+      return (
+        message ??
+        "Demasiados intentos. Espera unos minutos antes de volver a intentarlo."
+      );
     case 500:
       return "Ocurrió un error en el servidor.";
     default:

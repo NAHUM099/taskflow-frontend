@@ -64,6 +64,23 @@ describe("LoginForm", () => {
     expect(screen.getByRole("button", { name: "Iniciar sesión" })).toBeEnabled();
   });
 
+  it("muestra el aviso de bloqueo temporal cuando el backend responde 429", async () => {
+    loginMock.mockRejectedValue(
+      new Error(
+        "Demasiados intentos de inicio de sesión. Vuelve a intentarlo en 2 minutos.",
+      ),
+    );
+    renderForm();
+
+    await submitCredentials();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Vuelve a intentarlo en 2 minutos.",
+    );
+    expect(getToken()).toBeNull();
+    expect(routerMock.replace).not.toHaveBeenCalled();
+  });
+
   it("usa un mensaje genérico ante un fallo inesperado (no Error)", async () => {
     loginMock.mockRejectedValue("boom");
     renderForm();

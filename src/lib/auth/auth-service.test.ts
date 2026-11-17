@@ -42,6 +42,62 @@ describe("login", () => {
     );
   });
 
+  it("avisa del bloqueo temporal y del tiempo de espera cuando responde 429", async () => {
+    post.mockRejectedValue(
+      responseError(429, { message: "Demasiados intentos." }, { "retry-after": "120" }),
+    );
+
+    await expect(login(CREDENTIALS)).rejects.toThrow(
+      "Demasiados intentos de inicio de sesión. Vuelve a intentarlo en 2 minutos.",
+    );
+  });
+
+  it("expresa la espera en segundos cuando es menor de un minuto", async () => {
+    post.mockRejectedValue(responseError(429, {}, { "retry-after": "45" }));
+
+    await expect(login(CREDENTIALS)).rejects.toThrow("Vuelve a intentarlo en 45 segundos.");
+  });
+
+  it("redondea hacia arriba los segundos del Retry-After", async () => {
+    post.mockRejectedValue(responseError(429, {}, { "retry-after": "1" }));
+
+    await expect(login(CREDENTIALS)).rejects.toThrow(
+      "Vuelve a intentarlo en 1 segundo.",
+    );
+  });
+
+  it("interpreta el Retry-After aunque llegue como número", async () => {
+    post.mockRejectedValue(responseError(429, {}, { "retry-after": 30 }));
+
+    await expect(login(CREDENTIALS)).rejects.toThrow(
+      "Vuelve a intentarlo en 30 segundos.",
+    );
+  });
+
+  it("usa el singular cuando la espera es de un minuto exacto", async () => {
+    post.mockRejectedValue(responseError(429, {}, { "retry-after": "60" }));
+
+    await expect(login(CREDENTIALS)).rejects.toThrow(
+      "Vuelve a intentarlo en 1 minuto.",
+    );
+  });
+
+  it("usa el mensaje genérico de bloqueo si el 429 no trae Retry-After", async () => {
+    post.mockRejectedValue(responseError(429));
+
+    await expect(login(CREDENTIALS)).rejects.toThrow(
+      "Demasiados intentos de inicio de sesión. Espera unos minutos antes de volver a intentarlo.",
+    );
+  });
+
+  it("usa el mensaje genérico de bloqueo si el 429 no trae Retry-After válido", async () => {
+    post.mockRejectedValue(responseError(429, {}, { "retry-after": "desconocido" }));
+
+    await expect(login(CREDENTIALS)).rejects.toThrow(
+      "Demasiados intentos de inicio de sesión. Espera unos minutos antes de volver a intentarlo.",
+    );
+  });
+
   it("usa un mensaje genérico para errores que no son de Axios", async () => {
     post.mockRejectedValue(new Error("unexpected"));
 

@@ -57,7 +57,8 @@ En el frontend la comunicación HTTP está centralizada en una única instancia 
 - Axios añade `Authorization: Bearer <token>` mediante un interceptor.
 - `401` → se limpia la sesión y se redirige a `/login`.
 - `403` → no se cierra la sesión; se muestra el error de autorización.
-- Autorización por rol en backend: `/users/**` requiere `ROLE_ADMIN`. `POST /users` y `POST /auth/login` son públicos.
+- `429` en el login → se muestra el tiempo de espera indicado por `Retry-After` (rate limiting del backend por IP y por cuenta).
+- Autorización por rol en backend: `/users/**` requiere `ROLE_ADMIN`, incluido `POST /users` (el registro público está deshabilitado). `POST /auth/login` es el único endpoint público.
 - Alcance de tareas por rol: en `GET /tasks`, `GET /tasks/summary` y `PATCH /tasks/{id}/status` un
   `ROLE_USER` solo ve y mueve sus propias tareas (el backend ignora cualquier `userId` de la URL);
   `ROLE_MODERATOR` y `ROLE_ADMIN` ven todas.

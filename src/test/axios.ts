@@ -10,13 +10,17 @@ export function requestConfig(): InternalAxiosRequestConfig {
   return { headers: new AxiosHeaders() } as InternalAxiosRequestConfig;
 }
 
-export function responseError(status: number, data: unknown = {}): AxiosError {
+export function responseError(
+  status: number,
+  data: unknown = {},
+  headers: Record<string, string | number> = {},
+): AxiosError {
   const config = requestConfig();
   const response: AxiosResponse = {
     data,
     status,
     statusText: String(status),
-    headers: new AxiosHeaders(),
+    headers: new AxiosHeaders(headers),
     config,
   };
 
