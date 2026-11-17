@@ -1,7 +1,7 @@
 # Contratos de API — TaskFlow Frontend
 
 > Lo que el frontend consume y lo que el backend impone. Fuente de verdad: el backend.
-> Actualizado el **2026-11-13** (alcance de tareas por rol). Punto de entrada:
+> Actualizado el **2026-11-16** (rate limiting del login y `POST /users` solo ADMIN). Punto de entrada:
 > [../CLAUDE.md](../CLAUDE.md). Capas y servicios: [architecture.md](./architecture.md).
 
 ---
@@ -10,7 +10,7 @@
 
 | Método | Ruta | Servicio | Consumidor | Notas |
 | --- | --- | --- | --- | --- |
-| `POST` | `/auth/login` | `login()` (`src/lib/auth/auth-service.ts`) | `LoginForm` | Público. Body `{ email, password }` → `{ token }` |
+| `POST` | `/auth/login` | `login()` (`src/lib/auth/auth-service.ts`) | `LoginForm` | Público. Body `{ email, password }` → `{ token }`. **`429` + `Retry-After`** al agotar los intentos fallidos (§3.1) |
 | `GET` | `/tasks?page&size&status&userId&search` | `getTasks()` (`src/lib/services/task-service.ts`) | `useTasks` → `TasksContent`, `DashboardContent` | Devuelve `Page<TaskResponse>`; `page`/`size` por defecto `0`/`10` y orden `createdAt DESC`. Filtros y búsqueda opcionales. **Un `ROLE_USER` solo recibe sus tareas**: el backend ignora `userId` y fuerza el del JWT |
 | `GET` | `/tasks/summary` | `getTaskSummary()` | `useTaskSummary` → `DashboardContent` | Conteos por estado para las tarjetas del dashboard; requiere sesión y aplica el mismo alcance por rol que `/tasks` |
 | `POST` | `/tasks` | `createTask()` | `useCreateTask` → `CreateTaskModal` | La UI lo muestra solo a `ROLE_ADMIN` |
@@ -19,7 +19,7 @@
 | `PATCH` | `/users/{id}` | `updateUser()` | `useUpdateUser` → `EditUserModal` | Body `{ name, email }`; solo `ROLE_ADMIN` |
 | `PATCH` | `/users/{id}/status` | `updateUserStatus()` | `useUpdateUserStatus` → `UpdateUserStatusModal` | Body `{ active: boolean }`; responde el `UserResponse` actualizado; solo `ROLE_ADMIN` |
 | `PATCH` | `/users/{id}/password` | `updateUserPassword()` | `useUpdateUserPassword` → `UpdateUserPasswordModal` | Body `{ newPassword }` (mín. 6), responde `204 No Content`; solo `ROLE_ADMIN`. **Requiere el backend del PR #1 (`feature/admin-update-user-password`), pendiente de fusión en `main`** |
-| `POST` | `/users` | `createUser()` | `useCreateUser` → `CreateUserModal` | Público en el backend; la UI lo muestra solo a `ROLE_ADMIN`. Body `{ name, email, password }` (mín. 6); rol forzado a `USER` |
+| `POST` | `/users` | `createUser()` | `useCreateUser` → `CreateUserModal` | **Solo `ROLE_ADMIN`**: el registro público está deshabilitado. Body `{ name, email, password }` (mín. 6); rol forzado a `USER` |
 
 ---
 
@@ -38,11 +38,38 @@
 
 | Regla | Efecto en el frontend |
 | --- | --- |
-| `POST /auth/login` y `POST /users` → `permitAll` | Públicos; la UI solo ofrece el alta de usuarios a `ADMIN` |
-| `/users/**` → `hasRole("ADMIN")` | **Todo** el módulo de usuarios exige ADMIN, incluido `/users/me/password` |
+| `POST /auth/login` → `permitAll` | Único endpoint público; limitado por IP y por cuenta (§3.1) |
+| `/users/**` → `hasRole("ADMIN")` | **Todo** el módulo de usuarios exige ADMIN, incluido `POST /users` (el alta ya **no** es pública) y `/users/me/password` |
 | `POST /tasks` → `ADMIN` o `MODERATOR` | Un `MODERATOR` **puede** crear tareas por API, pero la UI solo muestra el botón a ADMIN |
 | Cualquier otra ruta → autenticado | Requiere JWT válido |
 | CORS | `http://localhost:3000` y `https://taskflow-frontend-ashen.vercel.app` |
+
+### 3.1 Rate limiting del login (`security/ratelimit`)
+
+`POST /auth/login` cuenta los intentos fallidos en dos ventanas fijas (5 min por defecto):
+
+| Clave | Límite | Objetivo |
+| --- | --- | --- |
+| `(IP, email)` | `max-attempts-per-account` (5) | Frena los intentos repetidos contra una cuenta concreta |
+| `IP` | `max-attempts-per-ip` (30) | Frena el barrido de muchas cuentas desde un mismo origen |
+
+Al superar cualquiera de las dos se responde `429 Too Many Requests` con:
+
+- Header `Retry-After` en **segundos** (entero).
+- `ErrorResponse` genérico: no distingue entre cuenta inexistente, inactiva o contraseña incorrecta.
+
+El bloqueo caduca solo (nunca es permanente) y un login correcto libera la cuota de la pareja
+`(IP, email)`; el contador por IP se mantiene. La clave nunca es solo el email, así que un tercero no
+puede bloquear la cuenta de otra persona desde su propia IP.
+
+Consumo en el frontend:
+
+- `login()` traduce el `429` a un `Error` con el tiempo de espera del `Retry-After`
+  (minutos si ≥ 60 s, segundos si no) y `LoginForm` lo muestra en su `role="alert"`. Si el header
+  falta o no es numérico se usa el mensaje genérico de bloqueo.
+- `getApiErrorMessage` (`src/lib/errors.ts`) también mapea `429` para el resto de llamadas.
+- La UI no bloquea el botón durante la espera: un reintento inmediato vuelve a recibir `429`
+  (ver [technical-debt.md](./technical-debt.md)).
 
 **Inconsistencias conocidas (no corregir aquí, solo tenerlas presentes):** un `MODERATOR` recibiría `403`
 al abrir el modal de creación de tareas, porque `CreateTaskModal` carga usuarios con `GET /users`

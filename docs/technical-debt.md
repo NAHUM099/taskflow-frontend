@@ -1,6 +1,6 @@
 # Deuda técnica y limitaciones conocidas — TaskFlow Frontend
 
-> Estado **actual** verificado el **2026-10-11**. Este documento sirve para **no empeorar** y para
+> Estado **actual** verificado el **2026-11-16**. Este documento sirve para **no empeorar** y para
 > priorizar; **no** es una lista de cambios a ejecutar sin aprobación.
 > Punto de entrada: [../CLAUDE.md](../CLAUDE.md). Diseño: [design-system.md](./design-system.md).
 > Contratos: [api-contracts.md](./api-contracts.md).
@@ -12,7 +12,7 @@
 1. **No existe `components/ui/`.** Botones, inputs, labels, badges, skeletons, bloques de error/vacío y
    cabeceras de "tabla" están repetidos en `Dashboard*`, `Tasks*` y `Users*`. Riesgo real: divergencia
    visual al tocar un solo sitio.
-2. **Sin pruebas E2E ni a11y automatizada**: la suite unitaria/integración (266 tests, 43 archivos) cubre
+2. **Sin pruebas E2E ni a11y automatizada**: la suite unitaria/integración (275 tests, 43 archivos) cubre
    `lib` (100 %), hooks (100 %), `AuthContext`, `components/*` y el flujo `401`/logout de punta a punta con
    jsdom, con 99 % de líneas globales (ver [testing.md](./testing.md)). Falta Playwright, `vitest-axe` y
    cualquier verificación contra el backend real. El CI ya ejecuta `npm run lint` y `npm run test:ci` antes
@@ -70,9 +70,9 @@
     uso.
 21. **Inconsistencias de permisos backend/frontend**: `MODERATOR` puede crear tareas por API pero la UI
     restringe el alta a `ADMIN`, y ese rol recibiría `403` al cargar usuarios dentro del modal;
-    `PATCH /users/me/password` es ADMIN-only. Además `POST /users` es **público** (`permitAll`) y crea
-    cuentas con rol `USER` sin verificación de email, mientras la UI solo lo ofrece dentro de
-    `/users` (ADMIN). Detalle en [api-contracts.md](./api-contracts.md).
+    `PATCH /users/me/password` es ADMIN-only. El alta de usuarios (`POST /users`) **ya requiere ADMIN**
+    (antes era `permitAll`) y el rol se fuerza a `USER`, pero sigue sin verificación de email. Detalle en
+    [api-contracts.md](./api-contracts.md).
 22. **Paginación de usuarios con doble fuente de verdad**: `UsersContent` guarda `page` en estado local pero
     `UserPagination` recibe `pageData.number` del servidor. Hoy coinciden; si el backend recortara la página
     pedida (p. ej. al borrar el último usuario de la última página) la UI quedaría desincronizada. Los tests
@@ -85,6 +85,11 @@
     y filtra por nombre en cliente (respuesta instantánea). Si el equipo supera los 100 usuarios, el resto
     no aparece en la lista; la salida es usar el parámetro `search` del backend con debounce, como hace
     `UsersContent`.
+25. **El bloqueo por `429` no se refleja en la UI durante la espera**: `LoginForm` muestra el mensaje
+    calculado con `Retry-After`, pero deja el botón activo, así que un reintento inmediato vuelve a recibir
+    `429` (el backend no descuenta la ventana). Una cuenta atrás real necesitaría temporizador propio y sus
+    tests; hoy el aviso es solo informativo. El estado del limiter, además, es por instancia salvo que se
+    configure `LOGIN_RATE_LIMIT_STORE=redis` en el backend.
 
 ---
 

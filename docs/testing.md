@@ -133,7 +133,7 @@ Exclusiones: `src/app/**` (archivos de ruta de 1–2 líneas), `src/test/**`, `*
 probar el cliente de React Query no da señal sobre nuestro código). La lógica de sesión que vive dentro de
 ese provider está extraída en `SessionCacheReset.tsx`, que **sí** se testea.
 
-Cobertura real al cierre (266 tests, 43 archivos):
+Cobertura real al cierre (275 tests, 43 archivos):
 
 | Área | Líneas | Ramas |
 | --- | --- | --- |

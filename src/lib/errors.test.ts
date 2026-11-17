@@ -65,6 +65,17 @@ describe("getApiErrorMessage", () => {
     ).toBe("Transición inválida.");
   });
 
+  it("explica el bloqueo por exceso de intentos en 429", () => {
+    expect(
+      getApiErrorMessage(
+        responseError(429, { message: "Demasiados intentos de login." }),
+      ),
+    ).toBe("Demasiados intentos de login.");
+    expect(getApiErrorMessage(responseError(429))).toBe(
+      "Demasiados intentos. Espera unos minutos antes de volver a intentarlo.",
+    );
+  });
+
   it("oculta los detalles internos en 500", () => {
     expect(
       getApiErrorMessage(responseError(500, { message: "NullPointerException" })),
