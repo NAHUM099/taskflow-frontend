@@ -1,0 +1,92 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    name: Test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run tests with coverage
+        run: npm run test:ci
+
+      - name: Verify 275 tests with no skips or failures
+        if: always()
+        env:
+          EXPECTED_TESTS: "275"
+        run: |
+          python3 - <<'PY'
+          import os
+          import sys
+          import xml.etree.ElementTree as ET
+
+          path = "coverage/junit.xml"
+          try:
+              root = ET.parse(path).getroot()
+          except (OSError, ET.ParseError) as error:
+              print(f"Could not read {path}: {error}")
+              sys.exit(1)
+
+          def number(name):
+              return int(root.attrib.get(name) or 0)
+
+          expected = int(os.environ["EXPECTED_TESTS"])
+          totals = {
+              name: number(name)
+              for name in ("tests", "failures", "errors", "skipped")
+          }
+          print(
+              f"Results: {totals['tests']} tests, "
+              f"{totals['failures']} failures, {totals['errors']} errors, "
+              f"{totals['skipped']} skipped (expected {expected})"
+          )
+
+          if totals["tests"] != expected:
+              print(f"Expected {expected} tests, found {totals['tests']}")
+              sys.exit(1)
+          if totals["failures"] or totals["errors"] or totals["skipped"]:
+              print("The suite must have 0 failures, 0 errors and 0 skipped tests")
+              sys.exit(1)
+          PY
+
+      - name: Build production bundle
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080
+        run: npm run build
+
+      - name: Upload test and coverage reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-test-coverage-reports
+          path: coverage/
+          if-no-files-found: warn
+          retention-days: 14
