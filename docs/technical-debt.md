@@ -95,9 +95,6 @@
 
 ## Pendiente de confirmar
 
-- **`PATCH /users/{id}/password` (cambio de contraseña por ADMIN) llega en el PR #1 del backend
-  (`feature/admin-update-user-password`) y todavía no está en `main`**. La UI ya lo consume desde
-  `UpdateUserPasswordModal`; hasta que se fusione, la acción responderá `404`/`405` contra `main`.
 - Cobertura real de los tests del backend y política definitiva de creación de tareas (el `README` indica
   que `POST /tasks` limita por rol admin/mod en backend, mientras la UI restringe a ADMIN).
 - Estrategia de despliegue del frontend más allá del CI de Jenkins (`vercel.app` aparece en CORS, pero no
