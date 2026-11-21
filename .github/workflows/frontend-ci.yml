@@ -38,10 +38,10 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:ci
 
-      - name: Verify 275 tests with no skips or failures
+      - name: Verify 277 tests with no skips or failures
         if: always()
         env:
-          EXPECTED_TESTS: "275"
+          EXPECTED_TESTS: "277"
         run: |
           python3 - <<'PY'
           import os
